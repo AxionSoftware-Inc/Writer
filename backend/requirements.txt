@@ -1,0 +1,17 @@
+asgiref
+Django==5.1.6
+django-cors-headers
+django-jazzmin
+djangorestframework
+djangorestframework_simplejwt
+pillow
+psycopg2-binary
+PyJWT
+python-dotenv
+sqlparse
+tzdata
+gunicorn
+whitenoise
+sympy
+numpy
+scipy
