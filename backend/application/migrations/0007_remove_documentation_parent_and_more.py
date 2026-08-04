@@ -11,6 +11,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Drop this constraint before removing its project field. SQLite rebuilds
+        # the table during RemoveField and otherwise evaluates the stale field.
+        migrations.RemoveConstraint(
+            model_name='documentation',
+            name='unique_doc_slug_per_project',
+        ),
         migrations.RemoveField(
             model_name='documentation',
             name='parent',
