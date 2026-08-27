@@ -1,15 +1,30 @@
 "use client";
 
 import { memo, type ComponentProps } from "react";
+import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
-import { JupyterTerminalElement } from "@/components/jupyter-cell";
 import { LabResultCard } from "@/components/live-writer-bridge/lab-result-card";
-import { PlotRenderer } from "@/components/plot-renderer";
 import { parseWriterBridgeBlock } from "@/lib/live-writer-bridge";
+
+const PlotRenderer = dynamic(
+    () => import("@/components/plot-renderer").then((module) => module.PlotRenderer),
+    {
+        ssr: false,
+        loading: () => <div className="my-6 h-56 animate-pulse rounded-2xl border border-border/60 bg-muted/15" />,
+    },
+);
+
+const JupyterTerminalElement = dynamic(
+    () => import("@/components/jupyter-cell").then((module) => module.JupyterTerminalElement),
+    {
+        ssr: false,
+        loading: () => <div className="my-6 h-40 animate-pulse rounded-2xl border border-border/60 bg-muted/15" />,
+    },
+);
 
 function looksLikeHtml(content: string) {
     return /<\/?[a-z][\s\S]*>/i.test(content);
