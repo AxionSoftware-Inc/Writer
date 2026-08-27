@@ -10,6 +10,7 @@ import {
     type PaperFormData,
 } from "@/components/paper-editor-workspace";
 import { fetchWriterPaper, updateWriterPaper } from "@/lib/writer-api";
+import { reconcileWriterTemplateApplication } from "@/lib/writer-template-application";
 
 const EMPTY_FORM: PaperFormData = {
     title: "",
@@ -33,6 +34,10 @@ export default function EditPaperPage() {
     const [formData, setFormData] = useState<PaperFormData>(EMPTY_FORM);
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
+
+    const handleFormChange = useCallback((next: PaperFormData) => {
+        setFormData(reconcileWriterTemplateApplication(next));
+    }, []);
 
     const loadPaper = useCallback(async () => {
         setIsLoading(true);
@@ -69,7 +74,7 @@ export default function EditPaperPage() {
         setErrorMessage("");
 
         try {
-            const payload = nextData ?? formData;
+            const payload = reconcileWriterTemplateApplication(nextData ?? formData);
             const saved = await updateWriterPaper(id, payload);
 
             setFormData((current) => ({
@@ -140,7 +145,7 @@ export default function EditPaperPage() {
         <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden">
             <PaperEditorWorkspace
                 formData={formData}
-                onChange={setFormData}
+                onChange={handleFormChange}
                 onSubmit={handleSubmit}
                 saveState={status}
                 errorMessage={errorMessage}
