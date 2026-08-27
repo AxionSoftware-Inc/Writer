@@ -64,11 +64,30 @@ export default function EditPaperPage() {
 
         try {
             const payload = nextData ?? formData;
-            await updateWriterPaper(id, payload);
+            const saved = await updateWriterPaper(id, payload);
+
+            // Keep the editor open. A save action should not unexpectedly throw the
+            // user back to the archive. Also use the normalized server response so
+            // section ids/revisions returned by the backend remain authoritative.
+            setFormData((current) => ({
+                ...current,
+                ...payload,
+                title: saved.title ?? payload.title,
+                abstract: saved.abstract ?? payload.abstract,
+                content: saved.content ?? payload.content,
+                authors: saved.authors ?? payload.authors,
+                keywords: saved.keywords ?? payload.keywords,
+                document_kind: saved.document_kind ?? payload.document_kind,
+                branding_enabled: saved.branding_enabled ?? payload.branding_enabled,
+                branding_label: saved.branding_label ?? payload.branding_label,
+                status: saved.status ?? payload.status,
+                sections: Array.isArray(saved.sections) ? saved.sections : payload.sections,
+            }));
             setStatus("success");
-            setTimeout(() => {
-                router.push("/");
-            }, 900);
+
+            window.setTimeout(() => {
+                setStatus((current) => (current === "success" ? "idle" : current));
+            }, 1400);
         } catch (error) {
             console.error("Submission error:", error);
             setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
