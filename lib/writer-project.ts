@@ -38,6 +38,10 @@ function slugifySectionTitle(value: string) {
         .replace(/^-+|-+$/g, "") || "section";
 }
 
+function escapeMarkdownInline(value: string) {
+    return value.replace(/([\\`*_{}\[\]<>])/g, "\\$1");
+}
+
 export function getWriterSectionKey(section: WriterProjectSection) {
     return String(section.id ?? section.slug ?? section.title);
 }
@@ -88,21 +92,21 @@ export function compileWriterProjectSections(
     const body = normalizeWriterProjectSections(sections)
         .map((section) => {
             const content = (section.content || "").trim();
-            if (!content) {
-                return "";
-            }
+            if (!content) return "";
 
-            if (content.startsWith("#")) {
-                return content;
-            }
-
+            if (content.startsWith("#")) return content;
             return `## ${section.title}\n\n${content}`;
         })
         .filter(Boolean)
         .join("\n\n---\n\n")
         .trim();
-    void options;
-    return body;
+
+    if (!body) return "";
+
+    const brandingLabel = (options.brandingLabel || "").trim();
+    if (!options.brandingEnabled || !brandingLabel) return body;
+
+    return `${body}\n\n---\n\n_${escapeMarkdownInline(brandingLabel)}_`;
 }
 
 export function ensureWriterProjectSections(project: WriterProjectLike) {
