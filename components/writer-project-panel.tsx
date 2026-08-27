@@ -57,6 +57,13 @@ export function WriterProjectPanel({
         });
     }, [hideDone, kindFilter, search, sections]);
 
+    const requestRemoveSection = (section: WriterProjectSection) => {
+        if (sections.length <= 1) return;
+        const sectionId = getWriterSectionKey(section);
+        const confirmed = window.confirm(`“${section.title}” sectionini o‘chirasizmi? Bu section ichidagi matn ham o‘chadi.`);
+        if (confirmed) onRemoveSection(sectionId);
+    };
+
     return (
         <div className="writer-project-panel flex min-h-0 flex-col rounded-2xl border border-border/60 bg-background/75">
             <div className="flex items-center justify-between gap-3 border-b border-border/60 px-3.5 py-3">
@@ -67,22 +74,10 @@ export function WriterProjectPanel({
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={onAddSection}
-                        className="writer-icon-button"
-                        title="New section"
-                        aria-label="New section"
-                    >
+                    <button type="button" onClick={onAddSection} className="writer-icon-button" title="New section" aria-label="New section">
                         <FilePlus2 className="h-3.5 w-3.5" />
                     </button>
-                    <button
-                        type="button"
-                        onClick={onDuplicateSection}
-                        className="writer-icon-button"
-                        title="Duplicate active section"
-                        aria-label="Duplicate active section"
-                    >
+                    <button type="button" onClick={onDuplicateSection} className="writer-icon-button" title="Duplicate active section" aria-label="Duplicate active section">
                         <Copy className="h-3.5 w-3.5" />
                     </button>
                 </div>
@@ -96,6 +91,7 @@ export function WriterProjectPanel({
                         onChange={(event) => setSearch(event.target.value)}
                         placeholder="Search sections"
                         className="h-9 w-full rounded-xl border border-border/60 bg-muted/10 pl-9 pr-3 text-xs font-medium outline-none transition-colors focus:border-accent/35 focus:bg-background"
+                        aria-label="Search sections"
                     />
                 </div>
                 <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
@@ -105,6 +101,7 @@ export function WriterProjectPanel({
                             value={kindFilter}
                             onChange={(event) => setKindFilter(event.target.value as WriterProjectSection["kind"] | "all")}
                             className="h-8 w-full appearance-none rounded-lg border border-border/50 bg-background pl-8 pr-7 text-[11px] font-semibold outline-none focus:border-accent/35"
+                            aria-label="Filter sections by type"
                         >
                             <option value="all">All types</option>
                             <option value="frontmatter">Frontmatter</option>
@@ -123,6 +120,7 @@ export function WriterProjectPanel({
                                 ? "border-accent/25 bg-[var(--accent-soft)] text-accent"
                                 : "border-border/50 bg-background text-muted-foreground hover:text-foreground"
                         }`}
+                        aria-pressed={hideDone}
                     >
                         {hideDone ? "Done hidden" : "Hide done"}
                     </button>
@@ -148,6 +146,7 @@ export function WriterProjectPanel({
                                 type="button"
                                 onClick={() => onSelectSection(sectionId)}
                                 className="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left"
+                                aria-current={active ? "page" : undefined}
                             >
                                 <span className={`h-2 w-2 shrink-0 rounded-full ${progressDot(section.progress_state)}`} />
                                 <span className="min-w-0 flex-1">
@@ -158,14 +157,14 @@ export function WriterProjectPanel({
                                 </span>
                             </button>
 
-                            <div className={`flex items-center gap-0.5 transition-opacity ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                            <div className={`flex items-center gap-0.5 transition-opacity ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"}`}>
                                 <button
                                     type="button"
                                     onClick={() => onMoveSection(sectionId, "up")}
                                     disabled={index === 0}
                                     className="writer-row-action"
                                     title="Move up"
-                                    aria-label="Move up"
+                                    aria-label={`${section.title}ni yuqoriga ko‘chirish`}
                                 >
                                     <ChevronUp className="h-3 w-3" />
                                 </button>
@@ -175,17 +174,17 @@ export function WriterProjectPanel({
                                     disabled={index === sections.length - 1}
                                     className="writer-row-action"
                                     title="Move down"
-                                    aria-label="Move down"
+                                    aria-label={`${section.title}ni pastga ko‘chirish`}
                                 >
                                     <ChevronDown className="h-3 w-3" />
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => onRemoveSection(sectionId)}
+                                    onClick={() => requestRemoveSection(section)}
                                     disabled={sections.length === 1}
                                     className="writer-row-action hover:text-rose-500"
                                     title="Remove section"
-                                    aria-label="Remove section"
+                                    aria-label={`${section.title}ni o‘chirish`}
                                 >
                                     <Trash2 className="h-3 w-3" />
                                 </button>
@@ -212,12 +211,14 @@ export function WriterProjectPanel({
                         onChange={(event) => onUpdateActiveSection({ title: event.target.value })}
                         className="h-9 w-full rounded-xl border border-border/60 bg-background px-3 text-xs font-semibold outline-none focus:border-accent/35"
                         placeholder="Section title"
+                        aria-label="Active section title"
                     />
                     <div className="grid grid-cols-2 gap-2">
                         <select
                             value={activeSection.kind}
                             onChange={(event) => onUpdateActiveSection({ kind: event.target.value as WriterProjectSection["kind"] })}
                             className="h-9 min-w-0 rounded-xl border border-border/60 bg-background px-2.5 text-[11px] font-semibold outline-none focus:border-accent/35"
+                            aria-label="Active section type"
                         >
                             <option value="frontmatter">Frontmatter</option>
                             <option value="chapter">Chapter</option>
@@ -227,12 +228,9 @@ export function WriterProjectPanel({
                         </select>
                         <select
                             value={activeSection.progress_state}
-                            onChange={(event) =>
-                                onUpdateActiveSection({
-                                    progress_state: event.target.value as WriterProjectSection["progress_state"],
-                                })
-                            }
+                            onChange={(event) => onUpdateActiveSection({ progress_state: event.target.value as WriterProjectSection["progress_state"] })}
                             className="h-9 min-w-0 rounded-xl border border-border/60 bg-background px-2.5 text-[11px] font-semibold outline-none focus:border-accent/35"
+                            aria-label="Active section progress"
                         >
                             <option value="todo">Todo</option>
                             <option value="drafting">Drafting</option>
