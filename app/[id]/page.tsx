@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
+import { useParams } from "next/navigation";
 
 import {
     PaperEditorWorkspace,
@@ -10,53 +11,58 @@ import {
 } from "@/components/paper-editor-workspace";
 import { fetchWriterPaper, updateWriterPaper } from "@/lib/writer-api";
 
+const EMPTY_FORM: PaperFormData = {
+    title: "",
+    abstract: "",
+    content: "",
+    authors: "",
+    keywords: "",
+    document_kind: "paper",
+    branding_enabled: true,
+    branding_label: "Powered by MathSphere Writer",
+    status: "draft",
+    sections: [],
+};
+
 export default function EditPaperPage() {
-    const router = useRouter();
     const params = useParams();
     const id = params.id as string;
 
     const [isLoading, setIsLoading] = useState(true);
-    const [formData, setFormData] = useState<PaperFormData>({
-        title: "",
-        abstract: "",
-        content: "",
-        authors: "",
-        keywords: "",
-        document_kind: "paper",
-        branding_enabled: true,
-        branding_label: "Powered by MathSphere Writer",
-        status: "draft",
-        sections: [],
-    });
+    const [loadError, setLoadError] = useState("");
+    const [formData, setFormData] = useState<PaperFormData>(EMPTY_FORM);
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
-    useEffect(() => {
-        async function fetchPaper() {
-            try {
-                const data = await fetchWriterPaper(id);
-                setFormData({
-                    title: data.title || "",
-                    abstract: data.abstract || "",
-                    content: data.content || "",
-                    authors: data.authors || "",
-                    keywords: data.keywords || "",
-                    document_kind: data.document_kind || "paper",
-                    branding_enabled: data.branding_enabled ?? true,
-                    branding_label: data.branding_label || "Powered by MathSphere Writer",
-                    status: data.status || "draft",
-                    sections: Array.isArray(data.sections) ? data.sections : [],
-                });
-            } catch (error) {
-                console.error("Xatolik:", error);
-                router.push("/");
-            } finally {
-                setIsLoading(false);
-            }
-        }
+    const loadPaper = useCallback(async () => {
+        setIsLoading(true);
+        setLoadError("");
 
-        fetchPaper();
-    }, [id, router]);
+        try {
+            const data = await fetchWriterPaper(id);
+            setFormData({
+                title: data.title || "",
+                abstract: data.abstract || "",
+                content: data.content || "",
+                authors: data.authors || "",
+                keywords: data.keywords || "",
+                document_kind: data.document_kind || "paper",
+                branding_enabled: data.branding_enabled ?? true,
+                branding_label: data.branding_label || "Powered by MathSphere Writer",
+                status: data.status || "draft",
+                sections: Array.isArray(data.sections) ? data.sections : [],
+            });
+        } catch (error) {
+            console.error("Writer document load failed:", error);
+            setLoadError(error instanceof Error ? error.message : "Hujjatni yuklab bo‘lmadi.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        void loadPaper();
+    }, [loadPaper]);
 
     async function handleSubmit(nextData?: PaperFormData) {
         setStatus("submitting");
@@ -66,9 +72,6 @@ export default function EditPaperPage() {
             const payload = nextData ?? formData;
             const saved = await updateWriterPaper(id, payload);
 
-            // Keep the editor open. A save action should not unexpectedly throw the
-            // user back to the archive. Also use the normalized server response so
-            // section ids/revisions returned by the backend remain authoritative.
             setFormData((current) => ({
                 ...current,
                 ...payload,
@@ -89,8 +92,8 @@ export default function EditPaperPage() {
                 setStatus((current) => (current === "success" ? "idle" : current));
             }, 1400);
         } catch (error) {
-            console.error("Submission error:", error);
-            setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
+            console.error("Writer document save failed:", error);
+            setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog‘lanishda muammo.");
             setStatus("error");
         }
     }
@@ -98,8 +101,37 @@ export default function EditPaperPage() {
     if (isLoading) {
         return (
             <div className="flex h-dvh min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-background text-muted-foreground">
-                <Loader2 className="mb-4 h-8 w-8 animate-spin" />
-                <p>Muhit tayyorlanmoqda...</p>
+                <Loader2 className="mb-3 h-6 w-6 animate-spin" />
+                <p className="text-sm">Writer hujjati yuklanmoqda…</p>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div className="flex h-dvh min-h-0 w-full items-center justify-center overflow-hidden bg-background p-6">
+                <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background p-6 shadow-sm">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Document unavailable</div>
+                    <h1 className="mt-2 text-xl font-black tracking-tight">Hujjatni ochib bo‘lmadi</h1>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{loadError}</p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => void loadPaper()}
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-foreground px-4 text-xs font-bold text-background"
+                        >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Qayta urinish
+                        </button>
+                        <Link
+                            href="/"
+                            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/60 px-4 text-xs font-bold text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                            Arxivga qaytish
+                        </Link>
+                    </div>
+                </div>
             </div>
         );
     }
