@@ -92,12 +92,6 @@
   box-shadow: none;
 }
 
-@media (min-width: 1480px) {
-  .site-workspace-shell aside.site-panel {
-    width: 324px !important;
-  }
-}
-
 .site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child {
   border: 0;
   border-bottom: 1px solid var(--writer-line);
