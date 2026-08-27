@@ -7,8 +7,13 @@ interface PyodideWindow extends Window {
     loadPyodide?: (config: { indexURL: string }) => Promise<any>;
 }
 
+type DestroyableProxy = {
+    destroy?: () => void;
+};
+
 const PYODIDE_INDEX_URL = "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/";
 const PYODIDE_SCRIPT_URL = `${PYODIDE_INDEX_URL}pyodide.js`;
+const MAX_OUTPUT_CHARACTERS = 120_000;
 
 let pyodideScriptPromise: Promise<void> | null = null;
 let sharedPyodidePromise: Promise<any> | null = null;
@@ -73,6 +78,28 @@ function enqueueExecution<T>(task: () => Promise<T>) {
     return run;
 }
 
+function appendBoundedOutput(current: string, value: string) {
+    if (current.length >= MAX_OUTPUT_CHARACTERS) return current;
+
+    const next = `${current}${value}`;
+    if (next.length <= MAX_OUTPUT_CHARACTERS) return next;
+
+    return `${next.slice(0, MAX_OUTPUT_CHARACTERS)}\n… output truncated by Writer …\n`;
+}
+
+function destroyResultProxy(result: unknown) {
+    if (!result || (typeof result !== "object" && typeof result !== "function")) return;
+
+    const destroy = (result as DestroyableProxy).destroy;
+    if (typeof destroy === "function") {
+        try {
+            destroy.call(result);
+        } catch {
+            // A returned JS primitive or already-disposed PyProxy needs no cleanup.
+        }
+    }
+}
+
 export function JupyterTerminalElement({ code: initialCode }: { code: string }) {
     const [code, setCode] = useState(initialCode);
     const [output, setOutput] = useState("");
@@ -90,13 +117,20 @@ export function JupyterTerminalElement({ code: initialCode }: { code: string }) 
         setError(null);
         setPlots([]);
 
+        let result: unknown;
         try {
-            const result = await enqueueExecution(async () => {
+            result = await enqueueExecution(async () => {
                 const pyodide = await getSharedPyodide();
                 setEngineStatus("ready");
 
-                pyodide.setStdout({ batched: (value: string) => setOutput((current) => `${current}${value}\n`) });
-                pyodide.setStderr({ batched: (value: string) => setOutput((current) => `${current}${value}\n`) });
+                pyodide.setStdout({
+                    batched: (value: string) =>
+                        setOutput((current) => appendBoundedOutput(current, `${value}\n`)),
+                });
+                pyodide.setStderr({
+                    batched: (value: string) =>
+                        setOutput((current) => appendBoundedOutput(current, `${value}\n`)),
+                });
 
                 if (typeof pyodide.loadPackagesFromImports === "function") {
                     await pyodide.loadPackagesFromImports(code);
@@ -133,12 +167,16 @@ except Exception:
             if (typeof result === "string" && result.length > 100 && !result.includes("\n")) {
                 setPlots([result]);
             } else if (result !== undefined && result !== null && typeof result !== "function") {
-                setOutput((current) => `${current}${current && !current.endsWith("\n") ? "\n" : ""}${String(result)}`);
+                const renderedResult = String(result);
+                setOutput((current) =>
+                    appendBoundedOutput(current, `${current && !current.endsWith("\n") ? "\n" : ""}${renderedResult}`),
+                );
             }
         } catch (caughtError: unknown) {
             console.error("Python execution error:", caughtError);
             setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
         } finally {
+            destroyResultProxy(result);
             setIsRunning(false);
         }
     };
@@ -199,9 +237,9 @@ except Exception:
                         </div>
                     ))}
 
-                    {output ? <pre className="overflow-x-auto whitespace-pre-wrap text-slate-300">{output}</pre> : null}
+                    {output ? <pre className="max-h-80 overflow-auto whitespace-pre-wrap text-slate-300">{output}</pre> : null}
                     {error ? (
-                        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap border-t border-red-500/20 pt-2 text-red-400">
+                        <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap border-t border-red-500/20 pt-2 text-red-400">
                             {error}
                         </pre>
                     ) : null}
