@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-
 import {
     PaperEditorWorkspace,
     type PaperFormData,
@@ -12,7 +11,6 @@ import { readQueuedWriterImport, removeQueuedWriterImport, serializeWriterBridge
 import { createWriterPaper } from "@/lib/writer-api";
 import { compileWriterProjectSections } from "@/lib/writer-project";
 import { createDraftFromTemplate, getDefaultWriterTemplate, getWriterTemplate, getWriterTemplatePreset } from "@/lib/writer-templates";
-
 
 function NewPaperPageContent() {
     const router = useRouter();
@@ -32,23 +30,15 @@ function NewPaperPageContent() {
     const resolvedAddOnIds = addOnIds.length ? addOnIds : selectedPreset?.addOnIds ?? [];
 
     const [formData, setFormData] = useState<PaperFormData>(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds));
-
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        if (importedFromLaboratory.current || typeof window === "undefined") {
-            return;
-        }
-
-        if (source !== "laboratory") {
-            return;
-        }
+        if (importedFromLaboratory.current || typeof window === "undefined") return;
+        if (source !== "laboratory") return;
 
         const laboratoryExport = readQueuedWriterImport(importId);
-        if (!laboratoryExport) {
-            return;
-        }
+        if (!laboratoryExport) return;
 
         importedFromLaboratory.current = true;
         removeQueuedWriterImport(importId);
@@ -99,11 +89,12 @@ function NewPaperPageContent() {
 
         try {
             const payload = nextData ?? formData;
-            await createWriterPaper(payload);
+            const created = await createWriterPaper(payload);
             setStatus("success");
-            setTimeout(() => {
-                router.push("/");
-            }, 900);
+
+            // The first save promotes the local draft to a persisted document.
+            // Continue in the editor instead of sending the user back to archive.
+            router.replace(`/${created.id}`);
         } catch (error) {
             console.error("Submission error:", error);
             setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
