@@ -1,37 +1,74 @@
-/* Writer premium UI pass — intentionally scoped so legacy feature behavior stays intact. */
+/*
+ * MathSphere Writer — premium workbench layer
+ *
+ * This file intentionally changes presentation only. The Writer feature graph
+ * remains in paper-editor-workspace.tsx; advanced tools are visually demoted,
+ * not removed.
+ */
 
 :root {
-  --writer-canvas: #f6f6f3;
-  --writer-surface: rgba(255, 255, 255, 0.92);
+  --writer-canvas: #f2f2ef;
+  --writer-canvas-raised: #e9e9e5;
+  --writer-surface: rgba(255, 255, 255, 0.94);
   --writer-surface-solid: #ffffff;
-  --writer-line: rgba(17, 24, 39, 0.10);
-  --writer-shadow: 0 18px 50px -34px rgba(15, 23, 42, 0.22);
+  --writer-surface-subtle: #f7f7f5;
+  --writer-line: rgba(17, 24, 39, 0.09);
+  --writer-line-strong: rgba(17, 24, 39, 0.16);
+  --writer-muted: #707782;
+  --writer-shadow: 0 20px 55px -38px rgba(15, 23, 42, 0.28);
+  --writer-paper-shadow: 0 22px 70px -42px rgba(15, 23, 42, 0.34);
+  --writer-radius: 0.9rem;
+  --writer-radius-small: 0.62rem;
 }
 
 .dark {
-  --writer-canvas: #090a0b;
-  --writer-surface: rgba(16, 18, 20, 0.94);
-  --writer-surface-solid: #101214;
-  --writer-line: rgba(255, 255, 255, 0.08);
-  --writer-shadow: 0 22px 60px -38px rgba(0, 0, 0, 0.85);
+  --writer-canvas: #090b0e;
+  --writer-canvas-raised: #0d1014;
+  --writer-surface: rgba(16, 19, 24, 0.96);
+  --writer-surface-solid: #101318;
+  --writer-surface-subtle: #0d1014;
+  --writer-line: rgba(255, 255, 255, 0.075);
+  --writer-line-strong: rgba(255, 255, 255, 0.13);
+  --writer-muted: #77818e;
+  --writer-shadow: 0 25px 70px -44px rgba(0, 0, 0, 0.92);
+  --writer-paper-shadow: 0 26px 78px -42px rgba(0, 0, 0, 0.88);
 }
 
-/* Keep the workbench quiet. The content should feel expensive, not the chrome. */
+/* -------------------------------------------------------------------------- */
+/* Workbench                                                                  */
+/* -------------------------------------------------------------------------- */
+
 .site-workspace-shell {
+  isolation: isolate;
   background: var(--writer-canvas);
 }
 
+.site-workspace-shell > div {
+  background: var(--writer-canvas);
+}
+
+.site-workspace-shell > div > div:nth-child(2) {
+  gap: 0.6rem !important;
+  padding: 0.65rem !important;
+  background: var(--writer-canvas) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Top bar                                                                    */
+/* -------------------------------------------------------------------------- */
+
 .site-workspace-topbar {
-  border: 0;
-  border-bottom: 1px solid var(--writer-line);
-  background: color-mix(in srgb, var(--writer-surface-solid) 94%, transparent);
-  box-shadow: none;
-  backdrop-filter: none;
+  position: relative;
+  z-index: 40;
+  border: 0 !important;
+  border-bottom: 1px solid var(--writer-line) !important;
+  background: color-mix(in srgb, var(--writer-canvas-raised) 96%, transparent) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 .site-workspace-topbar > div {
-  padding-top: 0.45rem;
-  padding-bottom: 0.45rem;
+  padding: 0.42rem 0.72rem !important;
 }
 
 .site-workspace-topbar .site-toolbar-shell {
@@ -41,175 +78,222 @@
   box-shadow: none;
 }
 
-.site-workspace-topbar .site-toolbar-shell .site-toolbar-shell {
-  border: 1px solid var(--writer-line);
-  border-radius: 0.8rem;
-  background: var(--writer-surface);
-  padding: 0.25rem;
-  box-shadow: none;
+.site-workspace-topbar > div > .site-toolbar-shell {
+  padding: 0 !important;
 }
 
-.site-workspace-topbar .site-toolbar-segment {
-  border: 0;
-  border-radius: 0.65rem;
-  background: transparent;
-  padding: 0.15rem;
-}
-
-.site-workspace-topbar .site-toolbar-segment button,
-.site-workspace-topbar .site-toolbar-pill {
-  min-height: 2rem;
-  border: 0;
-  border-radius: 0.55rem;
-  background: transparent;
-  padding: 0.4rem 0.65rem;
-  font-size: 0.625rem;
-  letter-spacing: 0.08em;
-  box-shadow: none;
-}
-
-.site-workspace-topbar .site-toolbar-segment button:hover,
-.site-workspace-topbar .site-toolbar-pill:hover {
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+.site-workspace-topbar > div > .site-toolbar-shell > div {
+  min-height: 2.75rem;
+  gap: 0.75rem;
 }
 
 .site-workspace-topbar input[name="title"] {
-  font-family: var(--font-sans-global);
-  font-size: clamp(1rem, 1.35vw, 1.25rem);
-  font-weight: 720;
-  letter-spacing: -0.025em;
-}
-
-/* Give the document most of the screen. */
-.site-workspace-shell > div > div:nth-child(2) {
-  background: var(--writer-canvas);
-}
-
-.site-workspace-shell aside.site-panel {
-  border-radius: 0.9rem;
-  border-color: var(--writer-line);
-  background: var(--writer-surface);
-  box-shadow: none;
-}
-
-.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child {
-  border: 0;
-  border-bottom: 1px solid var(--writer-line);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0 0 0.65rem;
-}
-
-.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child .flex.flex-wrap {
-  flex-wrap: nowrap;
-  gap: 0.25rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child .flex.flex-wrap::-webkit-scrollbar {
-  display: none;
-}
-
-.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child button {
-  min-width: auto;
-  flex: 0 0 auto;
+  height: 2.45rem;
   border-radius: 0.55rem;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.59rem;
-  letter-spacing: 0.08em;
+  padding: 0 0.2rem;
+  font-family: var(--font-sans-global);
+  font-size: clamp(0.98rem, 1.25vw, 1.18rem);
+  font-weight: 760;
+  letter-spacing: -0.028em;
 }
 
-/* Primary editor + preview: fewer bubbles, tighter rhythm. */
-.site-workspace-shell section.site-panel,
-.site-document-frame {
-  border: 1px solid var(--writer-line);
-  border-radius: 0.9rem;
-  background: var(--writer-surface-solid);
-  box-shadow: var(--writer-shadow);
+.site-workspace-topbar input[name="title"]:focus {
+  background: color-mix(in srgb, var(--foreground) 3.5%, transparent);
 }
 
-.site-workspace-shell section.site-panel > div:first-child {
-  background: transparent;
-}
-
-.site-workspace-shell section.site-panel textarea {
-  border-color: transparent;
-  border-radius: 0.6rem;
-  background: var(--writer-surface-solid);
-  padding: 1rem 1.15rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 0.875rem;
-  line-height: 1.8;
-}
-
-.site-workspace-shell section.site-panel textarea:focus {
-  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-soft) 80%, transparent);
-}
-
-.site-document-frame {
-  background: #ececea;
-}
-
-.dark .site-document-frame {
-  background: #0d0f11;
-}
-
-.site-document-page {
-  border-radius: 0.75rem !important;
+.site-workspace-topbar a[href] {
   border-color: var(--writer-line) !important;
-  background: #ffffff !important;
-  box-shadow: 0 14px 42px -28px rgba(15, 23, 42, 0.32) !important;
+  border-radius: 0.58rem !important;
+  background: transparent !important;
 }
 
-.dark .site-document-page {
-  background: #111315 !important;
+.site-workspace-topbar a[href]:hover {
+  border-color: var(--writer-line-strong) !important;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent) !important;
+}
+
+/* The inner action dock is a single quiet control group. */
+.site-workspace-topbar .site-toolbar-shell .site-toolbar-shell {
+  gap: 0.18rem !important;
+  border: 1px solid var(--writer-line);
+  border-radius: 0.72rem;
+  background: var(--writer-surface);
+  padding: 0.22rem !important;
+  box-shadow: none;
+}
+
+.site-workspace-topbar .site-toolbar-pill,
+.site-workspace-topbar .site-toolbar-segment button {
+  min-height: 2rem !important;
+  border: 0 !important;
+  border-radius: 0.5rem !important;
+  background: transparent;
+  padding: 0.38rem 0.6rem !important;
+  font-size: 0.61rem !important;
+  font-weight: 760 !important;
+  letter-spacing: 0.07em !important;
   box-shadow: none !important;
 }
 
-.writer-preview-content {
-  font-size: 0.98rem;
+.site-workspace-topbar .site-toolbar-pill:hover,
+.site-workspace-topbar .site-toolbar-segment button:hover {
+  background: color-mix(in srgb, var(--foreground) 5.5%, transparent) !important;
 }
 
-.writer-preview-content :is(p, li) {
-  line-height: 1.78;
-}
-
-.writer-preview-content :is(h1, h2, h3) {
-  font-family: var(--font-serif-global);
-}
-
-/* Reduce bottom telemetry to the few pieces people actually glance at. */
-.site-workspace-shell + div,
-.site-workspace-shell > div > div:last-child {
-  background: color-mix(in srgb, var(--writer-surface-solid) 96%, transparent);
-}
-
-.site-workspace-shell > div > div:last-child .site-status-pill {
+.site-workspace-topbar .site-toolbar-segment {
+  gap: 0.12rem;
   border: 0;
-  border-radius: 0.45rem;
+  border-radius: 0.55rem;
   background: transparent;
-  padding: 0.25rem 0.45rem;
-  font-size: 0.61rem;
-  letter-spacing: 0.04em;
+  padding: 0.08rem;
 }
 
-.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(2),
-.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(3),
-.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(4),
-.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(5),
-.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(7),
-.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(8) {
+/* Sync controls still exist in Tools > Performance; keep the primary bar clean. */
+.site-workspace-topbar .site-toolbar-segment + .site-toolbar-segment {
   display: none;
 }
 
-/* New compact project navigator primitives. */
+.site-workspace-topbar .site-toolbar-segment button.bg-accent {
+  background: var(--foreground) !important;
+  color: var(--background) !important;
+}
+
+.site-workspace-topbar details > div {
+  border-color: var(--writer-line-strong) !important;
+  border-radius: 0.75rem !important;
+  background: var(--writer-surface-solid) !important;
+  box-shadow: 0 22px 56px -28px rgba(0, 0, 0, 0.38) !important;
+}
+
+.site-workspace-topbar button:has(> .lucide-save) {
+  min-height: 2.1rem;
+  border-radius: 0.56rem !important;
+  padding-inline: 0.85rem !important;
+  background: var(--foreground) !important;
+  color: var(--background) !important;
+  box-shadow: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Inspector / project navigator                                              */
+/* -------------------------------------------------------------------------- */
+
+.site-workspace-shell aside.site-panel {
+  border: 1px solid var(--writer-line) !important;
+  border-radius: var(--writer-radius) !important;
+  background: var(--writer-surface) !important;
+  box-shadow: none !important;
+  padding: 0.62rem !important;
+}
+
+.site-workspace-shell aside.site-panel > div {
+  padding-right: 0 !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--writer-line-strong) transparent;
+}
+
+/* Inspector heading becomes a compact mode rail. */
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -0.1rem 0 0.28rem;
+  border: 0;
+  border-bottom: 1px solid var(--writer-line);
+  border-radius: 0;
+  background: var(--writer-surface);
+  box-shadow: none;
+  padding: 0 0 0.55rem;
+}
+
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child > div:first-child {
+  display: none;
+}
+
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child .flex.flex-wrap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.28rem;
+  overflow: visible;
+}
+
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child button {
+  min-width: 0 !important;
+  min-height: 2rem;
+  border: 1px solid transparent !important;
+  border-radius: 0.52rem !important;
+  background: transparent;
+  padding: 0.42rem 0.35rem !important;
+  font-size: 0.57rem !important;
+  letter-spacing: 0.075em !important;
+  white-space: nowrap;
+}
+
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child button:hover {
+  border-color: var(--writer-line) !important;
+  background: color-mix(in srgb, var(--foreground) 4.5%, transparent) !important;
+}
+
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child button.bg-foreground {
+  border-color: var(--writer-line-strong) !important;
+  background: var(--foreground) !important;
+  color: var(--background) !important;
+}
+
+/* Advanced inspector cards become flat utility sections rather than cards-in-cards. */
+.site-workspace-shell aside.site-panel .site-panel,
+.site-workspace-shell aside.site-panel .site-panel-strong:not(:first-child) {
+  border-color: var(--writer-line) !important;
+  border-radius: 0.72rem !important;
+  background: color-mix(in srgb, var(--writer-surface-solid) 88%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.site-workspace-shell aside.site-panel .site-soft-panel {
+  border-color: var(--writer-line) !important;
+  background: color-mix(in srgb, var(--foreground) 2.5%, transparent) !important;
+}
+
+/* Resizer is discoverable only on hover. */
+.site-workspace-shell [role="separator"] {
+  width: 0.42rem !important;
+  border-radius: 999px;
+}
+
+.site-workspace-shell [role="separator"] > div {
+  width: 2px !important;
+  background: var(--writer-line-strong) !important;
+  opacity: 0.55;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Project panel                                                              */
+/* -------------------------------------------------------------------------- */
+
 .writer-project-panel {
   min-height: 260px;
-  max-height: min(62vh, 680px);
+  max-height: min(68vh, 760px);
   overflow: hidden;
+  border-color: transparent !important;
+  border-radius: 0.72rem !important;
+  background: transparent !important;
+}
+
+.writer-project-panel > div:first-child {
+  padding: 0.65rem 0.55rem 0.7rem !important;
+  border-color: var(--writer-line) !important;
+}
+
+.writer-project-panel input,
+.writer-project-panel select {
+  border-color: var(--writer-line) !important;
+  background: var(--writer-surface-subtle) !important;
+}
+
+.writer-project-panel input:focus,
+.writer-project-panel select:focus {
+  border-color: var(--writer-line-strong) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-soft) 72%, transparent);
 }
 
 .writer-icon-button,
@@ -220,42 +304,264 @@
   border: 1px solid var(--writer-line);
   background: transparent;
   color: var(--muted-foreground);
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
 .writer-icon-button {
   width: 2rem;
   height: 2rem;
-  border-radius: 0.55rem;
+  border-radius: 0.52rem;
 }
 
 .writer-row-action {
-  width: 1.65rem;
-  height: 1.65rem;
-  border-radius: 0.45rem;
+  width: 1.62rem;
+  height: 1.62rem;
+  border-radius: 0.42rem;
   border-color: transparent;
 }
 
 .writer-icon-button:hover,
 .writer-row-action:hover {
-  border-color: var(--writer-line);
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  border-color: var(--writer-line-strong);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
   color: var(--foreground);
 }
 
 .writer-row-action:disabled,
 .writer-icon-button:disabled {
-  opacity: 0.28;
+  opacity: 0.25;
   pointer-events: none;
 }
 
-/* Archive: content-first cards, less decorative chrome. */
+/* -------------------------------------------------------------------------- */
+/* Editor                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.site-workspace-shell section.site-panel {
+  border: 1px solid var(--writer-line) !important;
+  border-radius: var(--writer-radius) !important;
+  background: var(--writer-surface-solid) !important;
+  box-shadow: var(--writer-shadow) !important;
+}
+
+.site-workspace-shell section.site-panel > div:first-child {
+  min-height: 3.45rem;
+  border-color: var(--writer-line) !important;
+  background: transparent !important;
+  padding: 0.7rem 0.9rem !important;
+}
+
+.site-workspace-shell section.site-panel > div:first-child .site-status-pill {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.57rem;
+  letter-spacing: 0.11em;
+}
+
+/* The instructional strip costs vertical space after the user already knows the editor. */
+.site-workspace-shell section.site-panel > div:nth-child(2) {
+  display: none;
+}
+
+.site-workspace-shell section.site-panel > div:last-child {
+  padding: 0 !important;
+  background: var(--writer-surface-solid) !important;
+}
+
+.site-workspace-shell section.site-panel textarea {
+  min-height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--writer-surface-solid) !important;
+  padding: 1.35rem 1.55rem 3rem !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875rem !important;
+  line-height: 1.9 !important;
+  tab-size: 4;
+  box-shadow: none !important;
+}
+
+.site-workspace-shell section.site-panel textarea:focus {
+  outline: none !important;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 42%, transparent) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Preview                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.site-document-frame {
+  border: 1px solid var(--writer-line) !important;
+  border-radius: var(--writer-radius) !important;
+  background: #e9e8e3 !important;
+  box-shadow: var(--writer-shadow) !important;
+}
+
+.dark .site-document-frame {
+  background: #0d1014 !important;
+}
+
+.site-document-frame > div {
+  scrollbar-width: thin;
+  scrollbar-color: var(--writer-line-strong) transparent;
+}
+
+.site-document-frame > div > div {
+  max-width: 8.65in !important;
+  padding: 1.25rem 1rem 2.5rem !important;
+}
+
+.site-document-page {
+  overflow: hidden;
+  border: 1px solid rgba(72, 67, 58, 0.13) !important;
+  border-radius: 0.68rem !important;
+  background: #fbfaf6 !important;
+  color: #1e2024 !important;
+  box-shadow: var(--writer-paper-shadow) !important;
+}
+
+/* A dark application still uses a paper-like document surface. */
+.dark .site-document-page {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  background: #f7f4ed !important;
+  color: #202226 !important;
+  box-shadow: var(--writer-paper-shadow) !important;
+}
+
+.site-document-page > div:first-child {
+  border-color: rgba(72, 67, 58, 0.11) !important;
+  padding: 2.5rem 2.75rem 2rem !important;
+}
+
+.site-document-page > div:first-child h1 {
+  max-width: 46rem;
+  font-family: var(--font-serif-global);
+  font-size: clamp(2.15rem, 3vw, 3.15rem) !important;
+  font-weight: 760 !important;
+  line-height: 1.04;
+  letter-spacing: -0.045em !important;
+  color: #1b1d20 !important;
+}
+
+.site-document-page .site-document-chip {
+  border-color: rgba(72, 67, 58, 0.09) !important;
+  background: #ebe8e1 !important;
+  color: #555b62 !important;
+}
+
+.site-document-page > div:nth-child(2) {
+  border-color: rgba(72, 67, 58, 0.11) !important;
+}
+
+.writer-preview-content,
+.dark .writer-preview-content {
+  color: #303338 !important;
+  font-size: 0.985rem;
+}
+
+.writer-preview-content :is(p, li, td, th, dd, dt, blockquote, figcaption, span, strong, em),
+.dark .writer-preview-content :is(p, li, td, th, dd, dt, blockquote, figcaption, span, strong, em) {
+  color: inherit !important;
+}
+
+.writer-preview-content :is(h1, h2, h3, h4, h5, h6),
+.dark .writer-preview-content :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-serif-global);
+  color: #202226 !important;
+}
+
+.writer-preview-content :is(p, li) {
+  line-height: 1.82 !important;
+}
+
+.writer-preview-content h2 {
+  margin-top: 2.8em !important;
+}
+
+.writer-preview-content pre {
+  border-color: rgba(31, 35, 40, 0.1) !important;
+  border-radius: 0.7rem !important;
+  background: #17191d !important;
+  color: #e8ebef !important;
+  box-shadow: none !important;
+}
+
+.writer-preview-content code {
+  color: inherit;
+}
+
+.writer-preview-content blockquote {
+  border-radius: 0.25rem !important;
+  border-left-color: #8d9298 !important;
+  background: #efede7 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Status bar                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.site-workspace-shell > div > div:last-child {
+  min-height: 1.85rem;
+  border-color: var(--writer-line) !important;
+  background: var(--writer-canvas-raised) !important;
+  padding: 0.3rem 0.75rem !important;
+}
+
+.site-workspace-shell > div > div:last-child .site-status-pill {
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  padding: 0.18rem 0.35rem;
+  font-size: 0.59rem;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+}
+
+/* Keep file position, words, save state and preview state; demote telemetry. */
+.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(2),
+.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(3),
+.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(4),
+.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(5),
+.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(7),
+.site-workspace-shell > div > div:last-child .site-status-pill:nth-child(8) {
+  display: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared controls                                                            */
+/* -------------------------------------------------------------------------- */
+
+.site-workspace-shell button,
+.site-workspace-shell input,
+.site-workspace-shell textarea,
+.site-workspace-shell select,
+.site-shell button,
+.site-shell input {
+  accent-color: var(--accent);
+}
+
+.site-workspace-shell :focus-visible,
+.site-shell :focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 48%, transparent);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Archive                                                                    */
+/* -------------------------------------------------------------------------- */
+
 .site-shell {
   background: var(--writer-canvas);
 }
 
 .site-shell::before {
   display: none;
+}
+
+.site-shell > div:first-child {
+  border-color: var(--writer-line) !important;
+  background: var(--writer-canvas-raised) !important;
 }
 
 .site-shell .site-panel,
@@ -266,13 +572,65 @@
   box-shadow: none;
 }
 
+.site-shell aside .site-panel,
+.site-shell aside .site-panel-strong {
+  border-radius: 0.82rem;
+  background: var(--writer-surface) !important;
+}
+
 .site-shell main .site-panel {
+  min-height: 0;
+  border-radius: 0.82rem;
   background: var(--writer-surface-solid);
-  border-radius: 0.9rem;
 }
 
 .site-shell main .site-panel:hover {
-  border-color: color-mix(in srgb, var(--foreground) 20%, var(--writer-line));
+  border-color: var(--writer-line-strong);
+  background: color-mix(in srgb, var(--writer-surface-solid) 97%, var(--foreground) 3%);
+}
+
+.site-shell .site-chip {
+  border-color: var(--writer-line);
+  border-radius: 0.55rem;
+  background: transparent;
+  letter-spacing: 0.07em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive                                                                 */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1359px) {
+  .site-workspace-topbar .site-toolbar-pill span {
+    display: none;
+  }
+
+  .site-workspace-topbar .site-toolbar-segment span {
+    display: inline;
+  }
+
+  .site-workspace-shell > div > div:nth-child(2) {
+    padding: 0.5rem !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .site-workspace-topbar > div > .site-toolbar-shell > div {
+    align-items: center;
+  }
+
+  .site-workspace-topbar .site-toolbar-shell .site-toolbar-shell {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .site-document-frame > div > div {
+    padding: 0.75rem !important;
+  }
+
+  .site-document-page > div:first-child {
+    padding: 1.75rem 1.5rem 1.5rem !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
