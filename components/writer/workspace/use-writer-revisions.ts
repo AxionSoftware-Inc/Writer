@@ -24,6 +24,7 @@ export function useWriterRevisions({
 }) {
     const [snapshots, setSnapshots] = useState<WriterRevisionSnapshot[]>([]);
     const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
+    const [hydratedStorageKey, setHydratedStorageKey] = useState<string | null>(null);
 
     const selectedSnapshot =
         snapshots.find((snapshot) => snapshot.id === selectedSnapshotId) ?? snapshots[0] ?? null;
@@ -59,31 +60,35 @@ export function useWriterRevisions({
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+        setHydratedStorageKey(null);
         try {
             const raw = window.localStorage.getItem(storageKey);
             if (!raw) {
                 setSnapshots([]);
                 setSelectedSnapshotId(null);
+                setHydratedStorageKey(storageKey);
                 return;
             }
             const parsed = JSON.parse(raw) as WriterRevisionSnapshot[];
             const next = Array.isArray(parsed) ? parsed.slice(0, 12) : [];
             setSnapshots(next);
             setSelectedSnapshotId(next[0]?.id ?? null);
+            setHydratedStorageKey(storageKey);
         } catch {
             setSnapshots([]);
             setSelectedSnapshotId(null);
+            setHydratedStorageKey(storageKey);
         }
     }, [storageKey]);
 
     useEffect(() => {
-        if (typeof window === "undefined") return;
+        if (typeof window === "undefined" || hydratedStorageKey !== storageKey) return;
         try {
             window.localStorage.setItem(storageKey, JSON.stringify(snapshots.slice(0, 12)));
         } catch {
             // Revision history is a local convenience and must not block editing.
         }
-    }, [snapshots, storageKey]);
+    }, [hydratedStorageKey, snapshots, storageKey]);
 
     return {
         snapshots,
