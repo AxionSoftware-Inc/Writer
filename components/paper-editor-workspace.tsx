@@ -1,5 +1,5 @@
 "use client";
 
-export { WriterWorkspace as PaperEditorWorkspace } from "@/components/writer/workspace/writer-workspace";
-export type { WriterWorkspaceProps as PaperEditorWorkspaceProps } from "@/components/writer/workspace/writer-workspace";
+export { WriterWorkspace as PaperEditorWorkspace } from "@/components/writer";
+export type { WriterWorkspaceProps as PaperEditorWorkspaceProps } from "@/components/writer";
 export type { WriterDocument as PaperFormData } from "@/lib/writer-document";
