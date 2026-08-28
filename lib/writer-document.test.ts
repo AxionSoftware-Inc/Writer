@@ -60,10 +60,12 @@ describe("Writer document core", () => {
         expect(isWriterDocument(document)).toBe(true);
     });
 
-    it("rejects unknown or malformed document patches", () => {
+    it("allows metadata patches but rejects body/section patches", () => {
         expect(isWriterDocumentPatch({ title: "Updated" })).toBe(true);
         expect(isWriterDocumentPatch({ branding_enabled: false })).toBe(true);
         expect(isWriterDocumentPatch({ branding_enabled: "no" })).toBe(false);
+        expect(isWriterDocumentPatch({ content: "Direct compiled content mutation" })).toBe(false);
+        expect(isWriterDocumentPatch({ sections: [] })).toBe(false);
         expect(isWriterDocumentPatch({ arbitraryField: true })).toBe(false);
     });
 
