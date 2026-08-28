@@ -29,8 +29,9 @@ async function parseApiError(response: Response) {
 }
 
 function normalizeWriterPayload(payload: WriterDocument) {
+    const { schemaVersion: _schemaVersion, ...serverPayload } = payload;
     return {
-        ...payload,
+        ...serverPayload,
         sections: payload.sections.map((section, index) => {
             const normalized: Record<string, unknown> = {
                 title: section.title,
