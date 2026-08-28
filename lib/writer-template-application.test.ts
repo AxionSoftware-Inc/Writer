@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { normalizeWriterDocument } from "./writer-document";
 import { compileWriterProjectSections, createWriterProjectSection } from "./writer-project";
 import { reconcileWriterTemplateApplication } from "./writer-template-application";
 import { createDraftFromTemplate, getWriterTemplate } from "./writer-templates";
@@ -9,7 +10,7 @@ describe("Writer template application reconciliation", () => {
         const template = getWriterTemplate("research-paper");
         if (!template) throw new Error("research-paper template missing");
 
-        const draft = createDraftFromTemplate(template);
+        const draft = normalizeWriterDocument(createDraftFromTemplate(template));
         const reconciled = reconcileWriterTemplateApplication(draft);
 
         expect(reconciled).toBe(draft);
@@ -25,7 +26,7 @@ describe("Writer template application reconciliation", () => {
             order: 1,
         });
 
-        const transitionalState = {
+        const transitionalState = normalizeWriterDocument({
             title: template.titleTemplate,
             abstract: template.abstractTemplate,
             content: template.contentTemplate,
@@ -36,7 +37,7 @@ describe("Writer template application reconciliation", () => {
             branding_label: "Powered by MathSphere Writer",
             status: "draft",
             sections: [oldSection],
-        };
+        });
 
         const reconciled = reconcileWriterTemplateApplication(transitionalState);
 
@@ -50,7 +51,7 @@ describe("Writer template application reconciliation", () => {
 
     it("does not reinterpret arbitrary unsynchronized content as a template", () => {
         const section = createWriterProjectSection({ title: "Main", content: "Section body" });
-        const state = {
+        const state = normalizeWriterDocument({
             title: "Custom title",
             abstract: "",
             content: "Transient custom content",
@@ -61,7 +62,7 @@ describe("Writer template application reconciliation", () => {
             branding_label: "",
             status: "draft",
             sections: [section],
-        };
+        });
 
         expect(reconcileWriterTemplateApplication(state)).toBe(state);
     });
