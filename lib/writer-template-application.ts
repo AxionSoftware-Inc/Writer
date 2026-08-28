@@ -1,4 +1,4 @@
-import type { PaperFormData } from "@/components/paper-editor-workspace";
+import type { WriterDocument } from "@/lib/writer-document";
 import {
     compileWriterProjectSections,
     createWriterProjectSection,
@@ -10,14 +10,11 @@ function sameContent(left: string | null | undefined, right: string | null | und
 }
 
 /**
- * PaperEditorWorkspace historically applies a template by replacing `content`
- * while keeping the previous `sections` array. Writer is section-authoritative,
- * so that legacy transition can silently snap back to the old document.
- *
- * Reconcile only the recognizable template-replacement shape. Normal editor
- * changes are returned by identity and keep their existing section ids.
+ * Reconcile the legacy transition where a template replaces compiled `content`
+ * while an older section array is still attached. Writer is section-authoritative,
+ * so integrations must normalize that transition before persistence.
  */
-export function reconcileWriterTemplateApplication(next: PaperFormData): PaperFormData {
+export function reconcileWriterTemplateApplication(next: WriterDocument): WriterDocument {
     if (!next.sections.length || !next.content.trim()) return next;
 
     const compiledWithBranding = compileWriterProjectSections(next.sections, {
@@ -31,11 +28,8 @@ export function reconcileWriterTemplateApplication(next: PaperFormData): PaperFo
     }
 
     const matchedTemplate = writerTemplates.find(
-        (template) =>
-            template.titleTemplate === next.title &&
-            sameContent(template.contentTemplate, next.content),
+        (template) => template.titleTemplate === next.title && sameContent(template.contentTemplate, next.content),
     );
-
     if (!matchedTemplate) return next;
 
     const sections = [
