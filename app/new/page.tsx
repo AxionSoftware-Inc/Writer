@@ -3,26 +3,53 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-
 import {
     PaperEditorWorkspace,
     type PaperFormData,
 } from "@/components/paper-editor-workspace";
+import { getLocalScientificObject } from "@/lib/ecosystem/local-object-store";
 import { readQueuedWriterImport, removeQueuedWriterImport, serializeWriterBridgeBlock } from "@/lib/live-writer-bridge";
 import { createWriterPaper } from "@/lib/writer-api";
 import { compileWriterProjectSections } from "@/lib/writer-project";
 import { createDraftFromTemplate, getDefaultWriterTemplate, getWriterTemplate, getWriterTemplatePreset } from "@/lib/writer-templates";
 
+function prependToFirstSection(current: PaperFormData, importedContent: string, title?: string, abstract?: string) {
+    const nextSections = current.sections.length
+        ? current.sections.map((section, index) =>
+              index === 0
+                  ? {
+                        ...section,
+                        content: `${importedContent}\n\n---\n\n${section.content}`,
+                    }
+                  : section,
+          )
+        : current.sections;
+
+    return {
+        ...current,
+        sections: nextSections,
+        title:
+            current.title === getDefaultWriterTemplate().titleTemplate && title
+                ? title
+                : current.title,
+        abstract: current.abstract || abstract || "This draft was started from a scientific result in the active Project.",
+        content: compileWriterProjectSections(nextSections, {
+            brandingEnabled: current.branding_enabled,
+            brandingLabel: current.branding_label,
+        }),
+    };
+}
 
 function NewPaperPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const importedFromLaboratory = useRef(false);
+    const importedFromSource = useRef(false);
 
     const presetId = searchParams.get("preset");
     const templateId = searchParams.get("template");
     const source = searchParams.get("source");
     const importId = searchParams.get("importId") || undefined;
+    const objectId = searchParams.get("objectId") || undefined;
     const selectedPreset = getWriterTemplatePreset(presetId);
     const addOnIds = (searchParams.get("addons") || "")
         .split(",")
@@ -32,12 +59,24 @@ function NewPaperPageContent() {
     const resolvedAddOnIds = addOnIds.length ? addOnIds : selectedPreset?.addOnIds ?? [];
 
     const [formData, setFormData] = useState<PaperFormData>(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds));
-
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        if (importedFromLaboratory.current || typeof window === "undefined") {
+        if (importedFromSource.current || typeof window === "undefined") {
+            return;
+        }
+
+        if (source === "project" && objectId) {
+            importedFromSource.current = true;
+            void getLocalScientificObject(objectId).then((object) => {
+                if (!object?.revision?.payload || typeof object.revision.payload !== "object") return;
+                const payload = object.revision.payload as Record<string, unknown>;
+                const markdown = typeof payload.report_markdown === "string" ? payload.report_markdown : "";
+                const summary = typeof payload.summary === "string" ? payload.summary : "";
+                const importedContent = markdown.trim() || summary.trim() || object.title;
+                setFormData((current) => prependToFirstSection(current, importedContent, object.title, summary));
+            });
             return;
         }
 
@@ -50,7 +89,7 @@ function NewPaperPageContent() {
             return;
         }
 
-        importedFromLaboratory.current = true;
+        importedFromSource.current = true;
         removeQueuedWriterImport(importId);
         const timer = window.setTimeout(() => {
             const importedSections = [
@@ -59,39 +98,21 @@ function NewPaperPageContent() {
             ].filter(Boolean);
 
             setFormData((current) => {
-                const nextSections = current.sections.length
-                    ? current.sections.map((section, index) =>
-                          index === 0
-                              ? {
-                                    ...section,
-                                    content: `${importedSections.join("\n\n")}\n\n---\n\n${section.content}`,
-                                }
-                              : section,
-                      )
-                    : current.sections;
-
+                const next = prependToFirstSection(
+                    current,
+                    importedSections.join("\n\n"),
+                    laboratoryExport.title || "Laboratoriya hisoboti asosidagi maqola",
+                    laboratoryExport.abstract || "Ushbu qoralama matematik laboratoriyadan eksport qilingan hisob-kitob va vizual natijalarga tayangan holda shakllantirildi.",
+                );
                 return {
-                    ...current,
-                    sections: nextSections,
-                    title:
-                        current.title === getDefaultWriterTemplate().titleTemplate
-                            ? laboratoryExport.title || "Laboratoriya hisoboti asosidagi maqola"
-                            : current.title,
-                    abstract:
-                        current.abstract ||
-                        laboratoryExport.abstract ||
-                        "Ushbu qoralama matematik laboratoriyadan eksport qilingan hisob-kitob va vizual natijalarga tayangan holda shakllantirildi.",
-                    content: compileWriterProjectSections(nextSections, {
-                        brandingEnabled: current.branding_enabled,
-                        brandingLabel: current.branding_label,
-                    }),
+                    ...next,
                     keywords: current.keywords || laboratoryExport.keywords || "mathematics, laboratory",
                 };
             });
         }, 0);
 
         return () => window.clearTimeout(timer);
-    }, [importId, source]);
+    }, [importId, objectId, source]);
 
     async function handleSubmit(nextData?: PaperFormData) {
         setStatus("submitting");
