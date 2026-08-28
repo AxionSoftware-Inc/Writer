@@ -1,13 +1,19 @@
 export {
+    WRITER_DOCUMENT_SCHEMA_VERSION,
     analyzeWriterDocumentContent,
     buildLegacyWriterSnapshotStorageKey,
     buildWriterSnapshotStorageKey,
     createEmptyWriterDocument,
+    isWriterDocument,
+    isWriterDocumentPatch,
+    isWriterProjectSection,
+    normalizeWriterDocument,
     splitWriterCommaValues,
 } from "@/lib/writer-document";
 export type {
     WriterDocument,
     WriterDocumentAnalysis,
+    WriterDocumentPatch,
     WriterInspectorSection,
     WriterPreviewSyncMode,
     WriterSaveState,
@@ -20,6 +26,7 @@ export {
     defaultWriterHost,
     emitWriterHostEvent,
     isWriterHostCommand,
+    isWriterHostEvent,
     isWriterPostMessageEnvelope,
 } from "@/lib/writer-integration";
 export type {
@@ -31,6 +38,13 @@ export type {
     WriterPostMessageEnvelope,
     WriterPostMessageHostOptions,
 } from "@/lib/writer-integration";
+
+export {
+    WRITER_EXTERNAL_RESOURCE_SCHEMA_VERSION,
+    createWriterExternalResourceReference,
+    isWriterExternalResourceReference,
+} from "@/lib/writer-external-resource";
+export type { WriterExternalResourceReference } from "@/lib/writer-external-resource";
 
 export {
     compileWriterProjectSections,
