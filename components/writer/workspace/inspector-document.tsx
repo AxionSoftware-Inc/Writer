@@ -17,11 +17,18 @@ export function WriterDocumentInspector({ controller }: { controller: WriterWork
     const {
         formData,
         setField,
+        refreshPreview,
         showMeta,
         setShowMeta,
         applyTemplate,
         headings,
     } = controller;
+
+    const updateBranding = (field: "branding_enabled" | "branding_label", value: boolean | string) => {
+        if (field === "branding_enabled") setField(field, value as boolean);
+        else setField(field, value as string);
+        refreshPreview();
+    };
 
     return (
         <div className="space-y-3">
@@ -87,13 +94,13 @@ export function WriterDocumentInspector({ controller }: { controller: WriterWork
                                 <input
                                     type="checkbox"
                                     checked={formData.branding_enabled}
-                                    onChange={(event) => setField("branding_enabled", event.target.checked)}
+                                    onChange={(event) => updateBranding("branding_enabled", event.target.checked)}
                                     className="h-4 w-4"
                                 />
                             </label>
                             <input
                                 value={formData.branding_label}
-                                onChange={(event) => setField("branding_label", event.target.value)}
+                                onChange={(event) => updateBranding("branding_label", event.target.value)}
                                 disabled={!formData.branding_enabled}
                                 placeholder="Powered by MathSphere Writer"
                                 className="writer-field disabled:opacity-50"
