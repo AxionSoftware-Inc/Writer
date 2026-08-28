@@ -69,14 +69,19 @@ function NewPaperPageContent() {
 
         if (source === "project" && objectId) {
             importedFromSource.current = true;
-            void getLocalScientificObject(objectId).then((object) => {
-                if (!object?.revision?.payload || typeof object.revision.payload !== "object") return;
-                const payload = object.revision.payload as Record<string, unknown>;
-                const markdown = typeof payload.report_markdown === "string" ? payload.report_markdown : "";
-                const summary = typeof payload.summary === "string" ? payload.summary : "";
-                const importedContent = markdown.trim() || summary.trim() || object.title;
-                setFormData((current) => prependToFirstSection(current, importedContent, object.title, summary));
-            });
+            void getLocalScientificObject(objectId)
+                .then((object) => {
+                    if (!object?.revision?.payload || typeof object.revision.payload !== "object") {
+                        setErrorMessage("Project result could not be opened on this device.");
+                        return;
+                    }
+                    const payload = object.revision.payload as Record<string, unknown>;
+                    const markdown = typeof payload.report_markdown === "string" ? payload.report_markdown : "";
+                    const summary = typeof payload.summary === "string" ? payload.summary : "";
+                    const importedContent = markdown.trim() || summary.trim() || object.title;
+                    setFormData((current) => prependToFirstSection(current, importedContent, object.title, summary));
+                })
+                .catch(() => setErrorMessage("Project result could not be opened on this device."));
             return;
         }
 
@@ -133,7 +138,7 @@ function NewPaperPageContent() {
     }
 
     return (
-        <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden">
+        <div className="flex h-[calc(100dvh-36px)] min-h-0 w-full flex-col overflow-hidden">
             <PaperEditorWorkspace
                 formData={formData}
                 onChange={setFormData}
@@ -149,7 +154,7 @@ function NewPaperPageContent() {
 
 function NewPaperPageFallback() {
     return (
-        <div className="flex h-dvh min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-background text-muted-foreground">
+        <div className="flex h-[calc(100dvh-36px)] min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-background text-muted-foreground">
             <p>Writer yuklanmoqda...</p>
         </div>
     );
