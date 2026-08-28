@@ -15,9 +15,12 @@ export type {
 } from "@/lib/writer-document";
 
 export {
+    createPostMessageWriterHost,
     createWindowWriterHost,
     defaultWriterHost,
     emitWriterHostEvent,
+    isWriterHostCommand,
+    isWriterPostMessageEnvelope,
 } from "@/lib/writer-integration";
 export type {
     WriterHostAdapter,
@@ -25,6 +28,8 @@ export type {
     WriterHostCommand,
     WriterHostContext,
     WriterHostEvent,
+    WriterPostMessageEnvelope,
+    WriterPostMessageHostOptions,
 } from "@/lib/writer-integration";
 
 export {
