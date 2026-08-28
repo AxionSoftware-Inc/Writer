@@ -13,6 +13,7 @@ export type {
 } from "@/lib/writer-document";
 
 export {
+    createPostMessageWriterHost,
     createWindowWriterHost,
     defaultWriterHost,
 } from "@/lib/writer-integration";
@@ -22,4 +23,6 @@ export type {
     WriterHostCommand,
     WriterHostContext,
     WriterHostEvent,
+    WriterPostMessageEnvelope,
+    WriterPostMessageHostOptions,
 } from "@/lib/writer-integration";
