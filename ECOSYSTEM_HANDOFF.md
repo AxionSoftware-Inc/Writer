@@ -9,6 +9,24 @@ Writer is the ecosystem's **publication instrument**. It turns research objects,
 
 Writer does not own mathematical or physical compute.
 
+## Current milestone: Project result → draft
+
+Keep the integration deliberately small:
+
+```text
+Math result saved in active Project
+        ↓
+Writer Project Results
+        ↓
+New document
+        ↓
+result/report markdown is inserted into the first draft section
+```
+
+This path now uses the shared local Scientific Object store and does not require a server-side import job.
+
+Do not add live/pinned/frozen UI, collaboration, sync, or a generic object-reference framework until this simple flow is visually and functionally stable.
+
 ## Strong existing assets
 
 Preserve and evolve:
@@ -18,79 +36,38 @@ Preserve and evolve:
 - scientific/math rendering;
 - existing project/document concepts;
 - export/publishing capabilities;
-- current lab-result cards/import UI as migration input.
+- current lab-result import path as a migration fallback.
 
-## Major architecture problem to remove
+## Major architecture problem to remove later
 
 `backend/laboratory/` contains a large private copy of Mathematics solver infrastructure (integrals, differential equations, matrices, probability, series, SymPy service, jobs and verification).
 
-This is explicitly **legacy duplication**. No new solver work belongs in Writer.
+This is legacy duplication. No new solver work belongs in Writer.
 
-Do not delete it until existing Writer consumers are moved to Project/Scientific Object references. Once the object pipeline is working, retire the duplicated laboratory backend and all Writer-side assumptions that a scientific result must be recomputed locally by Writer.
+Do not delete it yet if an existing frontend consumer still depends on it. Do not expand it either. Once current consumers have moved to Project results, retire the duplicated laboratory backend.
 
-## Future Writer workflow
+## Backend boundary
 
-The core interaction becomes:
+Keep Writer-specific document persistence working during migration. Shared server concerns may later move to Platform Core, but ordinary local Project-result insertion must not wait for that migration.
 
-```text
-Insert
-  → From Project
-      → Calculations
-      → Simulations
-      → Visualizations / Scenes
-      → Datasets / Tables
-      → Notebook Findings
-```
+Writer must never read Mathematics or Notebook databases directly. Shared local objects are exchanged through the ecosystem contract/store, and future cloud sync can mirror the same objects.
 
-A selected item is inserted as a `ScientificObjectReference`, not copied as a PNG or Writer-specific result payload.
+## Current integration files
 
-## Reference semantics
-
-Writer must make evidence stability explicit:
-
-- **Live** — follow the latest compatible revision while drafting;
-- **Pinned** — bind to an explicit revision;
-- **Frozen** — immutable publication snapshot.
-
-A scientific figure/result inspector should eventually show source app, object title, revision, provenance, where it is used, and whether a newer revision exists.
-
-## Backend migration boundary
-
-Keep `paper_builder` and current document persistence working during migration, but move shared concerns to Platform Core:
-
-```text
-Platform Core
-  projects / objects / revisions / references / artifacts / identity
-
-Writer domain
-  manuscript structure / publication settings / export-specific state
-```
-
-Writer must never read Mathematics or Notebook databases directly.
-
-## First integration pipeline
-
-```text
-Open Project
-  → open/create manuscript
-  → Insert from Project
-  → choose Scientific Object
-  → create live/pinned/frozen reference
-  → render through object/scene adapter
-  → export publication view
-```
+- `app/project/page.tsx` — simple active Project result browser;
+- `app/new/page.tsx` — supports `source=project&objectId=...` and starts a draft from that local result;
+- `lib/ecosystem/local-object-store.ts` — shared browser object store contract;
+- `lib/ecosystem/project-context.ts` — active Project context.
 
 ## Near-term implementation order
 
-1. Add shared Project context + Platform Core client.
-2. Introduce an ecosystem object browser behind `Insert from Project`.
-3. Adapt `laboratory-result-import-panel` to consume generic object references.
-4. Render the current Math result payload through the same object adapter.
-5. Add live/pinned/frozen reference controls.
-6. Migrate document/project ownership assumptions toward shared Project IDs.
-7. Remove `backend/laboratory` and duplicated solver code after no frontend consumer depends on it.
-8. Keep only Writer-specific server logic that cannot reasonably be local or shared.
+1. Verify active Project survives navigation.
+2. Verify Math-saved objects appear on `/project`.
+3. Verify `New document` preloads the result into the first Writer section.
+4. Keep the manuscript editor visually primary.
+5. Only after this is stable, decide whether true reference semantics are necessary for drafting.
+6. Remove duplicated solver backend only after no current consumer needs it.
 
 ## Design rule
 
-The manuscript is the hero. Ecosystem chrome and object metadata must stay quiet until invoked. Avoid card-heavy dashboards inside the editor; use contextual insertion, inspectors and progressive disclosure instead.
+The manuscript is the hero. Ecosystem chrome and object metadata must stay quiet until invoked. Avoid card-heavy dashboards inside the editor; use contextual insertion and progressive disclosure instead.
