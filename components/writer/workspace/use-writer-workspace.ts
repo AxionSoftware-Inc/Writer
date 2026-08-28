@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import {
     analyzeWriterDocumentContent,
@@ -13,30 +13,23 @@ import {
 import { defaultWriterHost, emitWriterHostEvent, type WriterHostContext } from "@/lib/writer-integration";
 import { createWriterImportPayloadFromSavedResult } from "@/lib/laboratory-results";
 import type { WriterImportPayload } from "@/lib/live-writer-bridge";
-import {
-    compileWriterProjectSections,
-    createWriterProjectSection,
-    ensureWriterProjectSections,
-    getWriterSectionKey,
-    normalizeWriterProjectSections,
-    type WriterProjectSection,
-} from "@/lib/writer-project";
+import { getWriterSectionKey } from "@/lib/writer-project";
 import { analyzeWriterDocument, type WriterRevisionSnapshot } from "@/lib/writer-intelligence";
 import type { WriterTemplate } from "@/lib/writer-templates";
+import { useWriterHostBridge } from "./use-writer-host-bridge";
 import { useWriterLabDependencies } from "./use-writer-lab-dependencies";
 import { useWriterLayout } from "./use-writer-layout";
 import { useWriterRevisions } from "./use-writer-revisions";
+import { useWriterSectionSession } from "./use-writer-section-session";
 import {
     buildSavedResultImportSnippet,
     createSnapshotDocument,
     createTemplateDocument,
-    insertAtSelection,
     insertCitationAtSelection,
     replaceSavedResultImport,
 } from "./workspace-transforms";
 import type { OutdatedLabImport, WriterWorkspaceController, WriterWorkspaceProps } from "./workspace-types";
 
-const CONTENT_SYNC_DELAY_MS = 160;
 const PREVIEW_SYNC_DELAY_MS = 260;
 const LARGE_DOCUMENT_CHARACTER_THRESHOLD = 45000;
 const LARGE_DOCUMENT_WORD_THRESHOLD = 7000;
@@ -66,44 +59,42 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
         host = defaultWriterHost,
     } = props;
 
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const latestFormDataRef = useRef(formData);
-    const isInternalContentSyncRef = useRef(false);
-    const hostReadyKeyRef = useRef<string | null>(null);
-
     const hostContext = useMemo<WriterHostContext>(
         () => ({ documentId, mode, hostId: host.id }),
         [documentId, host.id, mode],
     );
     const resolvedBackHref = host.resolveBackHref?.(hostContext) ?? backHref;
-
-    const normalizedSections = useMemo(() => ensureWriterProjectSections(formData), [formData]);
-    const [activeSectionId, setActiveSectionId] = useState(() => getWriterSectionKey(normalizedSections[0]));
-    const activeSection =
-        normalizedSections.find((section) => getWriterSectionKey(section) === activeSectionId) ?? normalizedSections[0];
-
     const [showMeta, setShowMeta] = useState(true);
     const [inspectorSection, setInspectorSectionState] = useState<WriterInspectorSection>("navigator");
-    const [editorContent, setEditorContent] = useState(activeSection?.content ?? "");
-    const [previewContent, setPreviewContent] = useState(
-        compileWriterProjectSections(normalizedSections, {
-            brandingEnabled: formData.branding_enabled,
-            brandingLabel: formData.branding_label,
-        }),
-    );
-    const latestEditorContentRef = useRef(activeSection?.content ?? "");
-    const lastCommittedContentRef = useRef(activeSection?.content ?? "");
+
+    const sectionSession = useWriterSectionSession({ formData, onChange, host, hostContext });
+    const {
+        textareaRef,
+        latestFormDataRef,
+        latestEditorContentRef,
+        normalizedSections,
+        activeSection,
+        editorContent,
+        setEditorContent,
+        previewContent,
+        setPreviewContent,
+        compiledProjectContent,
+        compileProjectContent,
+        getSectionsWithCurrentDraft,
+        syncFullDocument,
+        activateSection,
+        handleSelectSection,
+        handleAddSection,
+        handleDuplicateSection,
+        handleMoveSection,
+        handleRemoveSection,
+        handleUpdateActiveSection,
+        updateEditorContentBase,
+        insertSnippetBase,
+    } = sectionSession;
 
     const deferredTitle = useDeferredValue(formData.title);
     const deferredAbstract = useDeferredValue(formData.abstract);
-    const compiledProjectContent = useMemo(
-        () =>
-            compileWriterProjectSections(normalizedSections, {
-                brandingEnabled: formData.branding_enabled,
-                brandingLabel: formData.branding_label,
-            }),
-        [formData.branding_enabled, formData.branding_label, normalizedSections],
-    );
     const deferredEditorContent = useDeferredValue(compiledProjectContent);
     const deferredPreviewContent = useDeferredValue(previewContent);
     const documentAnalysis = useMemo(
@@ -169,57 +160,16 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
     });
     const labDependencies = useWriterLabDependencies(compiledProjectContent);
 
-    const compileProjectContent = useCallback((sections: WriterProjectSection[]) => {
-        return compileWriterProjectSections(sections, {
-            brandingEnabled: latestFormDataRef.current.branding_enabled,
-            brandingLabel: latestFormDataRef.current.branding_label,
-        });
-    }, []);
-
-    const getSectionsWithCurrentDraft = useCallback(
-        (overrideContent = latestEditorContentRef.current) =>
-            normalizeWriterProjectSections(
-                normalizedSections.map((section) =>
-                    getWriterSectionKey(section) === getWriterSectionKey(activeSection)
-                        ? { ...section, content: overrideContent }
-                        : section,
-                ),
-            ),
-        [activeSection, normalizedSections],
-    );
-
     const setInspectorSection = useCallback((panel: WriterInspectorSection) => {
         setInspectorSectionState(panel);
         layout.setShowInspector(true);
     }, [layout.setShowInspector]);
 
-    const syncFullDocument = useCallback(
-        (next: WriterDocument, options: { syncPreview?: boolean } = {}) => {
-            const nextSections = normalizeWriterProjectSections(ensureWriterProjectSections(next));
-            const nextCompiledContent = compileWriterProjectSections(nextSections, {
-                brandingEnabled: next.branding_enabled,
-                brandingLabel: next.branding_label,
-            });
-            const nextData = { ...next, sections: nextSections, content: nextCompiledContent };
-            const nextActiveSection =
-                nextSections.find((section) => getWriterSectionKey(section) === activeSectionId) ?? nextSections[0];
-
-            latestFormDataRef.current = nextData;
-            latestEditorContentRef.current = nextActiveSection.content;
-            lastCommittedContentRef.current = nextActiveSection.content;
-            isInternalContentSyncRef.current = true;
-            setEditorContent(nextActiveSection.content);
-            if (options.syncPreview ?? true) setPreviewContent(nextCompiledContent);
-            onChange(nextData);
-        },
-        [activeSectionId, onChange],
-    );
-
     const refreshPreview = useCallback(() => {
         const nextSections = getSectionsWithCurrentDraft();
         setPreviewContent(compileProjectContent(nextSections));
         void emitWriterHostEvent(host, { type: "writer.preview.refreshed", context: hostContext });
-    }, [compileProjectContent, getSectionsWithCurrentDraft, host, hostContext]);
+    }, [compileProjectContent, getSectionsWithCurrentDraft, host, hostContext, setPreviewContent]);
 
     const createRevisionSnapshotFromCurrent = useCallback((label: string) => {
         const nextSections = getSectionsWithCurrentDraft();
@@ -230,7 +180,7 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
             content: compileProjectContent(nextSections),
             sectionCount: nextSections.length,
         });
-    }, [compileProjectContent, getSectionsWithCurrentDraft, revisions.createSnapshot]);
+    }, [compileProjectContent, getSectionsWithCurrentDraft, latestFormDataRef, revisions.createSnapshot]);
 
     const handleSave = useCallback(async () => {
         const nextSections = getSectionsWithCurrentDraft();
@@ -252,139 +202,15 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
             context: hostContext,
             document: nextData,
         });
-    }, [compileProjectContent, createRevisionSnapshotFromCurrent, getSectionsWithCurrentDraft, host, hostContext, mode, onSubmit, syncFullDocument]);
-
-    const activateSection = useCallback((section: WriterProjectSection) => {
-        const sectionId = getWriterSectionKey(section);
-        setActiveSectionId(sectionId);
-        latestEditorContentRef.current = section.content;
-        lastCommittedContentRef.current = section.content;
-        setEditorContent(section.content);
-        void emitWriterHostEvent(host, { type: "writer.section.changed", context: hostContext, sectionId });
-    }, [host, hostContext]);
-
-    const handleSelectSection = useCallback((sectionId: string) => {
-        const nextSections = getSectionsWithCurrentDraft();
-        const nextSection = nextSections.find((section) => getWriterSectionKey(section) === sectionId) ?? nextSections[0];
-        const nextData = {
-            ...latestFormDataRef.current,
-            sections: nextSections,
-            content: compileProjectContent(nextSections),
-        };
-        latestFormDataRef.current = nextData;
-        onChange(nextData);
-        activateSection(nextSection);
-    }, [activateSection, compileProjectContent, getSectionsWithCurrentDraft, onChange]);
-
-    const handleAddSection = useCallback(() => {
-        const mergedSections = getSectionsWithCurrentDraft();
-        const nextSections = normalizeWriterProjectSections([
-            ...mergedSections,
-            createWriterProjectSection({
-                title: `Section ${mergedSections.length + 1}`,
-                kind: latestFormDataRef.current.document_kind === "book" ? "chapter" : "section",
-                order: mergedSections.length + 1,
-                content: "",
-            }),
-        ]);
-        const createdSection = nextSections[nextSections.length - 1];
-        syncFullDocument({ ...latestFormDataRef.current, sections: nextSections, content: compileProjectContent(nextSections) });
-        activateSection(createdSection);
-    }, [activateSection, compileProjectContent, getSectionsWithCurrentDraft, syncFullDocument]);
-
-    const handleDuplicateSection = useCallback(() => {
-        const mergedSections = getSectionsWithCurrentDraft();
-        const currentIndex = mergedSections.findIndex(
-            (section) => getWriterSectionKey(section) === getWriterSectionKey(activeSection),
-        );
-        const sourceSection = mergedSections[currentIndex] ?? mergedSections[mergedSections.length - 1];
-        if (!sourceSection) return;
-
-        const duplicateSection = createWriterProjectSection({
-            title: `${sourceSection.title} Copy`,
-            kind: sourceSection.kind,
-            progress_state: sourceSection.progress_state,
-            order: sourceSection.order + 1,
-            content: sourceSection.content,
-        });
-        const nextSections = [...mergedSections];
-        nextSections.splice(currentIndex + 1, 0, duplicateSection);
-        const normalizedNextSections = normalizeWriterProjectSections(nextSections);
-        syncFullDocument({
-            ...latestFormDataRef.current,
-            sections: normalizedNextSections,
-            content: compileProjectContent(normalizedNextSections),
-        });
-        activateSection(duplicateSection);
-    }, [activateSection, activeSection, compileProjectContent, getSectionsWithCurrentDraft, syncFullDocument]);
-
-    const handleMoveSection = useCallback((sectionId: string, direction: "up" | "down") => {
-        const mergedSections = getSectionsWithCurrentDraft();
-        const currentIndex = mergedSections.findIndex((section) => getWriterSectionKey(section) === sectionId);
-        if (currentIndex < 0) return;
-        const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-        if (nextIndex < 0 || nextIndex >= mergedSections.length) return;
-        const nextSections = [...mergedSections];
-        [nextSections[currentIndex], nextSections[nextIndex]] = [nextSections[nextIndex], nextSections[currentIndex]];
-        const reorderedSections = nextSections.map((section, index) => ({ ...section, order: index + 1 }));
-        syncFullDocument({
-            ...latestFormDataRef.current,
-            sections: normalizeWriterProjectSections(reorderedSections),
-            content: compileProjectContent(reorderedSections),
-        });
-    }, [compileProjectContent, getSectionsWithCurrentDraft, syncFullDocument]);
-
-    const handleRemoveSection = useCallback((sectionId: string) => {
-        const mergedSections = getSectionsWithCurrentDraft();
-        if (mergedSections.length === 1) return;
-        const nextSections = normalizeWriterProjectSections(
-            mergedSections.filter((section) => getWriterSectionKey(section) !== sectionId),
-        );
-        syncFullDocument({ ...latestFormDataRef.current, sections: nextSections, content: compileProjectContent(nextSections) });
-        activateSection(nextSections[0]);
-    }, [activateSection, compileProjectContent, getSectionsWithCurrentDraft, syncFullDocument]);
-
-    const handleUpdateActiveSection = useCallback((patch: Partial<WriterProjectSection>) => {
-        const nextSections = getSectionsWithCurrentDraft().map((section) =>
-            getWriterSectionKey(section) === getWriterSectionKey(activeSection) ? { ...section, ...patch } : section,
-        );
-        syncFullDocument(
-            { ...latestFormDataRef.current, sections: nextSections, content: compileProjectContent(nextSections) },
-            { syncPreview: false },
-        );
-    }, [activeSection, compileProjectContent, getSectionsWithCurrentDraft, syncFullDocument]);
+    }, [compileProjectContent, createRevisionSnapshotFromCurrent, getSectionsWithCurrentDraft, host, hostContext, latestFormDataRef, mode, onSubmit, syncFullDocument]);
 
     const updateEditorContent = useCallback((nextContent: string, cursor?: number) => {
-        latestEditorContentRef.current = nextContent;
-        setEditorContent(nextContent);
-        if (layout.previewSyncMode === "live") {
-            setPreviewContent(compileProjectContent(getSectionsWithCurrentDraft(nextContent)));
-        }
-        if (typeof cursor === "number") {
-            requestAnimationFrame(() => {
-                const textarea = textareaRef.current;
-                if (!textarea) return;
-                textarea.focus();
-                textarea.selectionStart = cursor;
-                textarea.selectionEnd = cursor;
-            });
-        }
-    }, [compileProjectContent, getSectionsWithCurrentDraft, layout.previewSyncMode]);
-
-    const insertSnippet = useCallback((snippet: string) => {
-        const textarea = textareaRef.current;
-        const currentContent = latestEditorContentRef.current;
-        if (!textarea) {
-            updateEditorContent(`${currentContent}${snippet}`);
-            return;
-        }
-        const result = insertAtSelection(currentContent, snippet, textarea.selectionStart, textarea.selectionEnd);
-        updateEditorContent(result.content, result.cursor);
-    }, [updateEditorContent]);
+        updateEditorContentBase(nextContent, cursor);
+    }, [updateEditorContentBase]);
 
     const handleImportSavedLaboratoryResult = useCallback((payload: WriterImportPayload) => {
-        insertSnippet(`\n${buildSavedResultImportSnippet(payload)}\n`);
-    }, [insertSnippet]);
+        insertSnippetBase(`\n${buildSavedResultImportSnippet(payload)}\n`);
+    }, [insertSnippetBase]);
 
     const handleUpdateSavedResultImport = useCallback((item: OutdatedLabImport) => {
         const payload = createWriterImportPayloadFromSavedResult(item.latest, item.latest.structured_payload.profile || "summary");
@@ -400,7 +226,7 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
             { ...latestFormDataRef.current, sections: nextSections, content: compileProjectContent(nextSections) },
             { syncPreview: layout.previewSyncMode === "live" },
         );
-    }, [compileProjectContent, getSectionsWithCurrentDraft, layout.previewSyncMode, syncFullDocument, updateEditorContent]);
+    }, [compileProjectContent, getSectionsWithCurrentDraft, latestEditorContentRef, latestFormDataRef, layout.previewSyncMode, syncFullDocument, updateEditorContent]);
 
     const handleInsertCitation = useCallback((citation: string, inlineRef: string) => {
         const textarea = textareaRef.current;
@@ -417,7 +243,7 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
             textarea.selectionEnd,
         );
         updateEditorContent(result.content, result.cursor);
-    }, [updateEditorContent]);
+    }, [latestEditorContentRef, textareaRef, updateEditorContent]);
 
     const applyTemplate = useCallback((template: WriterTemplate) => {
         const shouldReplace =
@@ -427,13 +253,13 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
         const next = createTemplateDocument(latestFormDataRef.current, template);
         syncFullDocument(next.document);
         activateSection(next.section);
-    }, [activateSection, syncFullDocument]);
+    }, [activateSection, latestEditorContentRef, latestFormDataRef, syncFullDocument]);
 
     const handleRestoreSnapshot = useCallback((snapshot: WriterRevisionSnapshot) => {
         const next = createSnapshotDocument(latestFormDataRef.current, snapshot);
         syncFullDocument(next.document);
         activateSection(next.section);
-    }, [activateSection, syncFullDocument]);
+    }, [activateSection, latestFormDataRef, syncFullDocument]);
 
     const exportPreflightReport = useCallback(() => {
         const lines = [
@@ -475,68 +301,13 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
         } else {
             window.print();
         }
-    }, [compileProjectContent, getSectionsWithCurrentDraft, host, hostContext, layout]);
+    }, [compileProjectContent, getSectionsWithCurrentDraft, host, hostContext, layout.setViewMode, layout.viewMode, setPreviewContent]);
 
     const setField = useCallback(<K extends keyof WriterDocument>(field: K, value: WriterDocument[K]) => {
         const next = { ...latestFormDataRef.current, [field]: value };
         latestFormDataRef.current = next;
         onChange(next);
-    }, [onChange]);
-
-    useEffect(() => {
-        latestFormDataRef.current = formData;
-    }, [formData]);
-
-    useEffect(() => {
-        latestEditorContentRef.current = editorContent;
-    }, [editorContent]);
-
-    useEffect(() => {
-        if (!normalizedSections.some((section) => getWriterSectionKey(section) === activeSectionId)) {
-            setActiveSectionId(getWriterSectionKey(normalizedSections[0]));
-        }
-    }, [activeSectionId, normalizedSections]);
-
-    useEffect(() => {
-        const nextActiveContent = activeSection?.content ?? "";
-        if (isInternalContentSyncRef.current && nextActiveContent === latestEditorContentRef.current) {
-            isInternalContentSyncRef.current = false;
-            lastCommittedContentRef.current = nextActiveContent;
-            return;
-        }
-        if (nextActiveContent !== lastCommittedContentRef.current) {
-            lastCommittedContentRef.current = nextActiveContent;
-            latestEditorContentRef.current = nextActiveContent;
-            const frameId = window.requestAnimationFrame(() => {
-                setEditorContent(nextActiveContent);
-                setPreviewContent(compiledProjectContent);
-            });
-            return () => window.cancelAnimationFrame(frameId);
-        }
-    }, [activeSection, compiledProjectContent]);
-
-    useEffect(() => {
-        if (editorContent === lastCommittedContentRef.current) return;
-        const timeoutId = window.setTimeout(() => {
-            const nextContent = latestEditorContentRef.current;
-            const nextSections = getSectionsWithCurrentDraft(nextContent);
-            isInternalContentSyncRef.current = true;
-            lastCommittedContentRef.current = nextContent;
-            const nextData = {
-                ...latestFormDataRef.current,
-                sections: nextSections,
-                content: compileProjectContent(nextSections),
-            };
-            latestFormDataRef.current = nextData;
-            onChange(nextData);
-            void emitWriterHostEvent(host, {
-                type: "writer.document.changed",
-                context: hostContext,
-                document: nextData,
-            });
-        }, CONTENT_SYNC_DELAY_MS);
-        return () => window.clearTimeout(timeoutId);
-    }, [compileProjectContent, editorContent, getSectionsWithCurrentDraft, host, hostContext, onChange]);
+    }, [latestFormDataRef, onChange]);
 
     useEffect(() => {
         if (layout.previewSyncMode !== "live") return;
@@ -544,52 +315,29 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
             setPreviewContent(compileProjectContent(getSectionsWithCurrentDraft()));
         }, PREVIEW_SYNC_DELAY_MS);
         return () => window.clearTimeout(timeoutId);
-    }, [compileProjectContent, editorContent, getSectionsWithCurrentDraft, layout.previewSyncMode]);
+    }, [compileProjectContent, editorContent, getSectionsWithCurrentDraft, layout.previewSyncMode, setPreviewContent]);
 
     useEffect(() => {
         if (layout.viewMode === "preview" && layout.previewSyncMode === "manual") {
             setPreviewContent(compileProjectContent(getSectionsWithCurrentDraft()));
         }
-    }, [compileProjectContent, getSectionsWithCurrentDraft, layout.previewSyncMode, layout.viewMode]);
+    }, [compileProjectContent, getSectionsWithCurrentDraft, layout.previewSyncMode, layout.viewMode, setPreviewContent]);
 
-    useEffect(() => {
-        const readyKey = `${host.id}:${mode}:${documentId ?? ""}`;
-        if (hostReadyKeyRef.current === readyKey) return;
-        hostReadyKeyRef.current = readyKey;
-        void emitWriterHostEvent(host, { type: "writer.ready", context: hostContext });
-    }, [documentId, host, hostContext, mode]);
-
-    useEffect(() => {
-        if (!host.subscribe) return;
-        return host.subscribe((command) => {
-            switch (command.type) {
-                case "insert-markdown":
-                    insertSnippet(command.markdown);
-                    break;
-                case "replace-document":
-                    syncFullDocument(command.document);
-                    break;
-                case "patch-document":
-                    syncFullDocument({ ...latestFormDataRef.current, ...command.patch });
-                    break;
-                case "open-panel":
-                    setInspectorSection(command.panel);
-                    break;
-                case "set-view":
-                    layout.setViewMode(command.view);
-                    break;
-                case "refresh-preview":
-                    refreshPreview();
-                    break;
-                case "request-save":
-                    void handleSave();
-                    break;
-                case "focus-editor":
-                    requestAnimationFrame(() => textareaRef.current?.focus());
-                    break;
-            }
-        });
-    }, [handleSave, host, insertSnippet, layout.setViewMode, refreshPreview, setInspectorSection, syncFullDocument]);
+    const hostBridgeHandlers = useMemo(
+        () => ({
+            insertMarkdown: insertSnippetBase,
+            replaceDocument: syncFullDocument,
+            patchDocument: (patch: Partial<WriterDocument>) =>
+                syncFullDocument({ ...latestFormDataRef.current, ...patch }),
+            openPanel: setInspectorSection,
+            setView: layout.setViewMode,
+            refreshPreview,
+            requestSave: handleSave,
+            focusEditor: () => requestAnimationFrame(() => textareaRef.current?.focus()),
+        }),
+        [handleSave, insertSnippetBase, latestFormDataRef, layout.setViewMode, refreshPreview, setInspectorSection, syncFullDocument, textareaRef],
+    );
+    useWriterHostBridge(host, hostContext, hostBridgeHandlers);
 
     const statusTone =
         formData.status === "published"
@@ -673,7 +421,7 @@ export function useWriterWorkspace(props: WriterWorkspaceProps): WriterWorkspace
         handleMoveSection,
         handleRemoveSection,
         handleUpdateActiveSection,
-        insertSnippet,
+        insertSnippet: insertSnippetBase,
         handleImportSavedLaboratoryResult,
         handleUpdateSavedResultImport,
         handleDismissSavedResultImport: labDependencies.dismiss,
