@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { emitWriterHostEvent, type WriterHostAdapter } from "./writer-integration";
+import {
+    createPostMessageWriterHost,
+    emitWriterHostEvent,
+    isWriterHostCommand,
+    isWriterPostMessageEnvelope,
+    type WriterHostAdapter,
+} from "./writer-integration";
 
 describe("Writer host integration port", () => {
     it("emits typed events through the host adapter", async () => {
@@ -45,5 +51,37 @@ describe("Writer host integration port", () => {
         ).resolves.toBeUndefined();
         expect(consoleSpy).toHaveBeenCalled();
         consoleSpy.mockRestore();
+    });
+
+    it("validates command-specific payloads", () => {
+        expect(isWriterHostCommand({ type: "insert-markdown", markdown: "## Result" })).toBe(true);
+        expect(isWriterHostCommand({ type: "insert-markdown" })).toBe(false);
+        expect(isWriterHostCommand({ type: "open-panel", panel: "tools" })).toBe(true);
+        expect(isWriterHostCommand({ type: "open-panel", panel: "unknown" })).toBe(false);
+        expect(isWriterHostCommand({ type: "set-view", view: "split" })).toBe(true);
+        expect(isWriterHostCommand({ type: "set-view", view: "fullscreen" })).toBe(false);
+    });
+
+    it("validates postMessage envelopes", () => {
+        expect(
+            isWriterPostMessageEnvelope({
+                source: "mathsphere-writer",
+                channel: "writer",
+                kind: "command",
+                payload: { type: "focus-editor" },
+            }),
+        ).toBe(true);
+        expect(
+            isWriterPostMessageEnvelope({
+                source: "mathsphere-writer",
+                channel: "writer",
+                kind: "command",
+                payload: { type: "insert-markdown" },
+            }),
+        ).toBe(false);
+    });
+
+    it("rejects wildcard postMessage targets", () => {
+        expect(() => createPostMessageWriterHost({ targetOrigin: "*" })).toThrow(/explicit targetOrigin/);
     });
 });
