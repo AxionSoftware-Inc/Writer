@@ -1,16 +1,54 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
+
+import { emitWriterHostEvent, type WriterHostAdapter } from "@/lib/writer-integration";
 import { WriterEditorPane } from "./writer-editor-pane";
 import { WriterInspector } from "./writer-inspector";
 import { WriterPreviewPane } from "./writer-preview-pane";
 import { WriterStatusBar } from "./writer-status-bar";
 import { WriterWorkspaceToolbar } from "./workspace-toolbar";
+import { useWriterSnapshotMigration } from "./use-writer-snapshot-migration";
 import { useWriterWorkspace } from "./use-writer-workspace";
 import type { WriterWorkspaceProps } from "./workspace-types";
 
 export function WriterWorkspace(props: WriterWorkspaceProps) {
-    const controller = useWriterWorkspace(props);
+    useWriterSnapshotMigration(props);
+
+    /*
+     * document.changed has one authoritative source at the public workspace
+     * boundary so host applications see title/metadata/section changes as well
+     * as editor-content changes. The internal controller still emits the other
+     * fine-grained events, but its duplicate document.changed signal is filtered.
+     */
+    const controllerHost = useMemo<WriterHostAdapter | undefined>(() => {
+        if (!props.host) return undefined;
+        return {
+            ...props.host,
+            emit: props.host.emit
+                ? (event) => {
+                      if (event.type === "writer.document.changed") return;
+                      return props.host?.emit?.(event);
+                  }
+                : undefined,
+        };
+    }, [props.host]);
+
+    const controller = useWriterWorkspace({ ...props, host: controllerHost ?? props.host });
     const { slots } = props;
+
+    useEffect(() => {
+        if (!props.host) return;
+        void emitWriterHostEvent(props.host, {
+            type: "writer.document.changed",
+            context: {
+                documentId: props.documentId,
+                mode: props.mode ?? "new",
+                hostId: props.host.id,
+            },
+            document: props.formData,
+        });
+    }, [props.documentId, props.formData, props.host, props.mode]);
 
     return (
         <div className="site-workspace-shell flex h-full min-h-0 flex-1 flex-col overflow-hidden text-foreground print:h-auto print:overflow-visible print:bg-white">
