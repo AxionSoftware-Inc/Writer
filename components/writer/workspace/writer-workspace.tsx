@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
-import { emitWriterHostEvent, type WriterHostAdapter } from "@/lib/writer-integration";
+import { emitWriterHostEvent } from "@/lib/writer-integration";
 import { WriterEditorPane } from "./writer-editor-pane";
 import { WriterInspector } from "./writer-inspector";
 import { WriterPreviewPane } from "./writer-preview-pane";
@@ -14,29 +14,13 @@ import type { WriterWorkspaceProps } from "./workspace-types";
 
 export function WriterWorkspace(props: WriterWorkspaceProps) {
     useWriterSnapshotMigration(props);
+    const controller = useWriterWorkspace(props);
+    const { slots } = props;
 
     /*
      * document.changed has one authoritative source at the public workspace
-     * boundary so host applications see title/metadata/section changes as well
-     * as editor-content changes. The internal controller still emits the other
-     * fine-grained events, but its duplicate document.changed signal is filtered.
+     * boundary so hosts receive content, metadata and section changes exactly once.
      */
-    const controllerHost = useMemo<WriterHostAdapter | undefined>(() => {
-        if (!props.host) return undefined;
-        return {
-            ...props.host,
-            emit: props.host.emit
-                ? (event) => {
-                      if (event.type === "writer.document.changed") return;
-                      return props.host?.emit?.(event);
-                  }
-                : undefined,
-        };
-    }, [props.host]);
-
-    const controller = useWriterWorkspace({ ...props, host: controllerHost ?? props.host });
-    const { slots } = props;
-
     useEffect(() => {
         if (!props.host) return;
         void emitWriterHostEvent(props.host, {
