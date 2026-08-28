@@ -69,7 +69,7 @@ export function createWindowWriterHost(
         subscribe(listener) {
             if (typeof window === "undefined") return () => undefined;
             const handler = (event: Event) => {
-                const detail = (event as CustomEvent<WriterHostCommand>).detail;
+                const detail = (event as CustomEvent<unknown>).detail;
                 if (isWriterHostCommand(detail)) listener(detail);
             };
             window.addEventListener(`${channel}:command`, handler);
@@ -108,8 +108,8 @@ export type WriterPostMessageHostOptions = {
 
 /**
  * Cross-window bridge for iframe, microfrontend and WebView embedding.
- * The adapter refuses wildcard target origins and validates incoming origin,
- * channel, envelope kind and (optionally) source window before accepting commands.
+ * Wildcard target origins are rejected. Incoming commands are accepted only
+ * from the configured origin, channel, optional source window and valid payload.
  */
 export function createPostMessageWriterHost(options: WriterPostMessageHostOptions): WriterHostAdapter {
     const channel = options.channel || "mathsphere-writer";
@@ -156,30 +156,44 @@ export function createPostMessageWriterHost(options: WriterPostMessageHostOption
     };
 }
 
+const panelValues = new Set<WriterInspectorSection>(["navigator", "tools", "review", "document"]);
+const viewValues = new Set<WriterViewMode>(["edit", "split", "preview"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 export function isWriterHostCommand(value: unknown): value is WriterHostCommand {
-    if (!value || typeof value !== "object" || !("type" in value)) return false;
-    const type = (value as { type?: unknown }).type;
-    return typeof type === "string" && [
-        "insert-markdown",
-        "replace-document",
-        "patch-document",
-        "open-panel",
-        "set-view",
-        "refresh-preview",
-        "request-save",
-        "focus-editor",
-    ].includes(type);
+    if (!isRecord(value) || typeof value.type !== "string") return false;
+
+    switch (value.type) {
+        case "insert-markdown":
+            return typeof value.markdown === "string";
+        case "replace-document":
+            return isRecord(value.document);
+        case "patch-document":
+            return isRecord(value.patch);
+        case "open-panel":
+            return typeof value.panel === "string" && panelValues.has(value.panel as WriterInspectorSection);
+        case "set-view":
+            return typeof value.view === "string" && viewValues.has(value.view as WriterViewMode);
+        case "refresh-preview":
+        case "request-save":
+        case "focus-editor":
+            return true;
+        default:
+            return false;
+    }
 }
 
 export function isWriterPostMessageEnvelope(value: unknown): value is WriterPostMessageEnvelope {
-    if (!value || typeof value !== "object") return false;
-    const envelope = value as Partial<WriterPostMessageEnvelope>;
-    return (
-        envelope.source === "mathsphere-writer" &&
-        typeof envelope.channel === "string" &&
-        (envelope.kind === "command" || envelope.kind === "event") &&
-        Boolean(envelope.payload)
-    );
+    if (!isRecord(value)) return false;
+    if (value.source !== "mathsphere-writer" || typeof value.channel !== "string") return false;
+    if (value.kind === "command") return isWriterHostCommand(value.payload);
+    if (value.kind === "event") {
+        return isRecord(value.payload) && typeof value.payload.type === "string" && value.payload.type.startsWith("writer.");
+    }
+    return false;
 }
 
 export async function emitWriterHostEvent(host: WriterHostAdapter | undefined, event: WriterHostEvent) {
