@@ -3,6 +3,7 @@ import { Manrope, Playfair_Display } from "next/font/google";
 
 import "./globals.css";
 import "./premium-ui.css";
+import "./writer-workspace.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const manrope = Manrope({
@@ -17,7 +18,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
     title: "MathSphere Writer",
-    description: "Standalone scientific writing workspace extracted from the Mathematics monolith.",
+    description: "Scientific writing workspace designed for standalone use and host-application integration.",
 };
 
 export default function RootLayout({
