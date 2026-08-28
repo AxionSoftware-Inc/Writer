@@ -18,7 +18,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
     title: "MathSphere Writer",
-    description: "Scientific writing workspace designed for standalone use and host-application integration.",
+    description: "Embeddable scientific writing workspace for MathSphere products and host applications.",
 };
 
 export default function RootLayout({
