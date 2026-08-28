@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { useParams } from "next/navigation";
 
 import { WriterWorkspace } from "@/components/writer/workspace/writer-workspace";
-import { createEmptyWriterDocument, type WriterDocument } from "@/lib/writer-document";
+import { createEmptyWriterDocument, normalizeWriterDocument, type WriterDocument } from "@/lib/writer-document";
 import { fetchWriterPaper, updateWriterPaper } from "@/lib/writer-api";
 import { reconcileWriterTemplateApplication } from "@/lib/writer-template-application";
 
@@ -29,18 +29,7 @@ export default function EditPaperPage() {
         setLoadError("");
         try {
             const data = await fetchWriterPaper(id);
-            setFormData({
-                title: data.title || "",
-                abstract: data.abstract || "",
-                content: data.content || "",
-                authors: data.authors || "",
-                keywords: data.keywords || "",
-                document_kind: data.document_kind || "paper",
-                branding_enabled: data.branding_enabled ?? true,
-                branding_label: data.branding_label || "Powered by MathSphere Writer",
-                status: data.status || "draft",
-                sections: Array.isArray(data.sections) ? data.sections : [],
-            });
+            setFormData(normalizeWriterDocument(data));
         } catch (error) {
             console.error("Writer document load failed:", error);
             setLoadError(error instanceof Error ? error.message : "Hujjatni yuklab bo‘lmadi.");
@@ -59,19 +48,13 @@ export default function EditPaperPage() {
         try {
             const payload = reconcileWriterTemplateApplication(nextData ?? formData);
             const saved = await updateWriterPaper(id, payload);
-            setFormData({
-                ...payload,
-                title: saved.title ?? payload.title,
-                abstract: saved.abstract ?? payload.abstract,
-                content: saved.content ?? payload.content,
-                authors: saved.authors ?? payload.authors,
-                keywords: saved.keywords ?? payload.keywords,
-                document_kind: saved.document_kind ?? payload.document_kind,
-                branding_enabled: saved.branding_enabled ?? payload.branding_enabled,
-                branding_label: saved.branding_label ?? payload.branding_label,
-                status: saved.status ?? payload.status,
-                sections: Array.isArray(saved.sections) ? saved.sections : payload.sections,
-            });
+            setFormData(
+                normalizeWriterDocument({
+                    ...payload,
+                    ...saved,
+                    sections: Array.isArray(saved.sections) ? saved.sections : payload.sections,
+                }),
+            );
             setStatus("success");
             window.setTimeout(() => setStatus((current) => (current === "success" ? "idle" : current)), 1400);
         } catch (error) {
