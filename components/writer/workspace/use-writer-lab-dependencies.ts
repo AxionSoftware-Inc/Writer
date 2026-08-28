@@ -10,9 +10,7 @@ import { extractSavedResultImports } from "./workspace-transforms";
 export function useWriterLabDependencies(compiledContent: string) {
     const [outdated, setOutdated] = useState<OutdatedLabImport[]>([]);
     const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(() => new Set());
-
     const imports = useMemo(() => extractSavedResultImports(compiledContent), [compiledContent]);
-    const signature = useMemo(() => JSON.stringify(imports), [imports]);
 
     useEffect(() => {
         let cancelled = false;
@@ -44,8 +42,7 @@ export function useWriterLabDependencies(compiledContent: string) {
                             }),
                         });
                     } catch {
-                        // Dependency checks are advisory. A disconnected lab must
-                        // never make the Writer document unavailable.
+                        // Advisory only: a disconnected lab must never block Writer.
                     }
                 }),
             );
@@ -57,7 +54,7 @@ export function useWriterLabDependencies(compiledContent: string) {
         return () => {
             cancelled = true;
         };
-    }, [dismissedKeys, signature]);
+    }, [dismissedKeys, imports]);
 
     function dismiss(item: OutdatedLabImport) {
         setDismissedKeys((current) => {
