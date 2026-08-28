@@ -60,18 +60,31 @@ export function splitWriterCommaValues(value: string) {
         .filter(Boolean);
 }
 
+function normalizeSnapshotIdentity(value: string) {
+    return value
+        .toLowerCase()
+        .replace(/[^a-z0-9:_-]+/g, "-")
+        .replace(/-+/g, "-");
+}
+
 export function buildWriterSnapshotStorageKey(
     mode: "new" | "edit",
     documentId: string | undefined,
     title: string,
     firstSectionKey: string,
 ) {
-    const stableIdentity = documentId && documentId !== "new-draft" ? `id:${documentId}` : `${mode}:${title || firstSectionKey || "draft"}`;
-    const basis = stableIdentity
-        .toLowerCase()
-        .replace(/[^a-z0-9:_-]+/g, "-")
-        .replace(/-+/g, "-");
-    return `mathsphere_writer_snapshots::${basis}`;
+    const identity = documentId ? `id:${documentId}` : `${mode}:${title || firstSectionKey || "draft"}`;
+    return `mathsphere_writer_snapshots::${normalizeSnapshotIdentity(identity)}`;
+}
+
+/** Legacy key used before the modular workspace. Kept for one-way localStorage migration. */
+export function buildLegacyWriterSnapshotStorageKey(
+    mode: "new" | "edit",
+    title: string,
+    firstSectionKey: string,
+) {
+    const identity = `${mode}:${title || firstSectionKey || "draft"}`;
+    return `mathsphere_writer_snapshots::${normalizeSnapshotIdentity(identity)}`;
 }
 
 export function createEmptyWriterDocument(): WriterDocument {
