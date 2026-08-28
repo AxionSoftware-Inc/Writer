@@ -1,4 +1,11 @@
-import type { WriterDocument, WriterInspectorSection, WriterViewMode } from "@/lib/writer-document";
+import {
+    isWriterDocument,
+    isWriterDocumentPatch,
+    type WriterDocument,
+    type WriterDocumentPatch,
+    type WriterInspectorSection,
+    type WriterViewMode,
+} from "@/lib/writer-document";
 
 export type WriterHostCapabilities = {
     navigation?: boolean;
@@ -17,7 +24,7 @@ export type WriterHostContext = {
 export type WriterHostCommand =
     | { type: "insert-markdown"; markdown: string }
     | { type: "replace-document"; document: WriterDocument }
-    | { type: "patch-document"; patch: Partial<WriterDocument> }
+    | { type: "patch-document"; patch: WriterDocumentPatch }
     | { type: "open-panel"; panel: WriterInspectorSection }
     | { type: "set-view"; view: WriterViewMode }
     | { type: "refresh-preview" }
@@ -148,7 +155,7 @@ export function createPostMessageWriterHost(options: WriterPostMessageHostOption
                 if (allowedSource && event.source !== allowedSource) return;
                 if (!isWriterPostMessageEnvelope(event.data)) return;
                 if (event.data.channel !== channel || event.data.kind !== "command") return;
-                if (isWriterHostCommand(event.data.payload)) listener(event.data.payload);
+                listener(event.data.payload);
             };
             window.addEventListener("message", handler);
             return () => window.removeEventListener("message", handler);
@@ -158,9 +165,19 @@ export function createPostMessageWriterHost(options: WriterPostMessageHostOption
 
 const panelValues = new Set<WriterInspectorSection>(["navigator", "tools", "review", "document"]);
 const viewValues = new Set<WriterViewMode>(["edit", "split", "preview"]);
+const exportFormats = new Set(["pdf", "preflight"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isWriterHostContext(value: unknown): value is WriterHostContext {
+    if (!isRecord(value)) return false;
+    if (value.documentId !== undefined && typeof value.documentId !== "string") return false;
+    return (
+        typeof value.hostId === "string" &&
+        (value.mode === "new" || value.mode === "edit")
+    );
 }
 
 export function isWriterHostCommand(value: unknown): value is WriterHostCommand {
@@ -170,9 +187,9 @@ export function isWriterHostCommand(value: unknown): value is WriterHostCommand 
         case "insert-markdown":
             return typeof value.markdown === "string";
         case "replace-document":
-            return isRecord(value.document);
+            return isWriterDocument(value.document);
         case "patch-document":
-            return isRecord(value.patch);
+            return isWriterDocumentPatch(value.patch);
         case "open-panel":
             return typeof value.panel === "string" && panelValues.has(value.panel as WriterInspectorSection);
         case "set-view":
@@ -186,13 +203,35 @@ export function isWriterHostCommand(value: unknown): value is WriterHostCommand 
     }
 }
 
+export function isWriterHostEvent(value: unknown): value is WriterHostEvent {
+    if (!isRecord(value) || typeof value.type !== "string" || !isWriterHostContext(value.context)) return false;
+
+    switch (value.type) {
+        case "writer.ready":
+        case "writer.preview.refreshed":
+            return true;
+        case "writer.document.changed":
+        case "writer.document.save-requested":
+        case "writer.document.saved":
+            return isWriterDocument(value.document);
+        case "writer.section.changed":
+            return typeof value.sectionId === "string";
+        case "writer.view.changed":
+            return typeof value.view === "string" && viewValues.has(value.view as WriterViewMode);
+        case "writer.export.requested":
+            return typeof value.format === "string" && exportFormats.has(value.format);
+        case "writer.integration.error":
+            return typeof value.message === "string";
+        default:
+            return false;
+    }
+}
+
 export function isWriterPostMessageEnvelope(value: unknown): value is WriterPostMessageEnvelope {
     if (!isRecord(value)) return false;
     if (value.source !== "mathsphere-writer" || typeof value.channel !== "string") return false;
     if (value.kind === "command") return isWriterHostCommand(value.payload);
-    if (value.kind === "event") {
-        return isRecord(value.payload) && typeof value.payload.type === "string" && value.payload.type.startsWith("writer.");
-    }
+    if (value.kind === "event") return isWriterHostEvent(value.payload);
     return false;
 }
 
