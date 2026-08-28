@@ -63,6 +63,8 @@ describe("Writer host integration port", () => {
         expect(isWriterHostCommand({ type: "replace-document", document: {} })).toBe(false);
         expect(isWriterHostCommand({ type: "patch-document", patch: { title: "New title" } })).toBe(true);
         expect(isWriterHostCommand({ type: "patch-document", patch: { title: 17 } })).toBe(false);
+        expect(isWriterHostCommand({ type: "patch-document", patch: { content: "direct body mutation" } })).toBe(false);
+        expect(isWriterHostCommand({ type: "patch-document", patch: { sections: [] } })).toBe(false);
         expect(isWriterHostCommand({ type: "patch-document", patch: { unknown: true } })).toBe(false);
         expect(isWriterHostCommand({ type: "open-panel", panel: "tools" })).toBe(true);
         expect(isWriterHostCommand({ type: "open-panel", panel: "unknown" })).toBe(false);
