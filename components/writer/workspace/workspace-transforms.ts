@@ -1,5 +1,6 @@
 import { extractWriterBridgeBlocks, serializeWriterBridgeBlock, type WriterImportPayload } from "@/lib/live-writer-bridge";
-import { createWriterProjectSection, type WriterProjectSection } from "@/lib/writer-project";
+import { createWriterExternalResourceReference, type WriterExternalResourceReference } from "@/lib/writer-external-resource";
+import { createWriterProjectSection } from "@/lib/writer-project";
 import type { WriterDocument } from "@/lib/writer-document";
 import type { WriterRevisionSnapshot } from "@/lib/writer-intelligence";
 import type { WriterTemplate } from "@/lib/writer-templates";
@@ -7,6 +8,8 @@ import type { WriterTemplate } from "@/lib/writer-templates";
 const LAB_IMPORT_BLOCK_REGEX = /<!-- lab-result-import:([a-f0-9-]+):(\d+):start -->([\s\S]*?)<!-- lab-result-import:\1:end -->/gi;
 
 export type SavedResultImportReference = {
+    resource: WriterExternalResourceReference;
+    /** Legacy convenience fields kept while the Laboratory bridge migrates to the generic contract. */
     savedResultId: string;
     revision: number;
     integrity?: { sourceHash?: string; resultHash?: string; method?: string } | null;
@@ -30,9 +33,20 @@ export function extractSavedResultImports(content: string): SavedResultImportRef
     const imports: SavedResultImportReference[] = [];
     for (const match of content.matchAll(LAB_IMPORT_BLOCK_REGEX)) {
         const block = extractWriterBridgeBlocks(match[3])[0];
+        const revision = Number(match[2]);
+        const integrityHash = block?.integrity?.resultHash || block?.integrity?.sourceHash;
         imports.push({
+            resource: createWriterExternalResourceReference({
+                provider: "laboratory",
+                resourceType: "saved-result",
+                resourceId: match[1],
+                revision,
+                integrityHash,
+                renderer: block?.kind,
+                metadata: block?.moduleSlug ? { moduleSlug: block.moduleSlug } : undefined,
+            }),
             savedResultId: match[1],
-            revision: Number(match[2]),
+            revision,
             integrity: block?.integrity ?? null,
         });
     }
@@ -125,16 +139,4 @@ export function createSnapshotDocument(current: WriterDocument, snapshot: Writer
         } satisfies WriterDocument,
         section,
     };
-}
-
-export function replaceActiveSectionContent(
-    sections: WriterProjectSection[],
-    activeSectionKey: string,
-    content: string,
-) {
-    return sections.map((section) =>
-        String(section.id ?? section.slug ?? section.title) === activeSectionKey
-            ? { ...section, content }
-            : section,
-    );
 }
