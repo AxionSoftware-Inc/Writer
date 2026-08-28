@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react";
 
 import type { ChangeImpactMap } from "@/lib/computational-integrity";
 import type { SavedLaboratoryResult } from "@/lib/laboratory-results";
@@ -10,7 +10,9 @@ import type {
     WriterViewMode,
 } from "@/lib/writer-document";
 import type { WriterHostAdapter } from "@/lib/writer-integration";
+import type { WriterImportPayload } from "@/lib/live-writer-bridge";
 import type { WriterProjectSection } from "@/lib/writer-project";
+import type { WriterTemplate } from "@/lib/writer-templates";
 import type { WriterRevisionSnapshot, analyzeWriterDocument, compareWriterRevisions } from "@/lib/writer-intelligence";
 
 export type WriterWorkspaceProps = {
@@ -27,10 +29,10 @@ export type WriterWorkspaceProps = {
 };
 
 export type WriterWorkspaceSlots = {
-    toolbarEnd?: React.ReactNode;
-    inspectorToolsEnd?: React.ReactNode;
-    previewBefore?: React.ReactNode;
-    previewAfter?: React.ReactNode;
+    toolbarEnd?: ReactNode;
+    inspectorToolsEnd?: ReactNode;
+    previewBefore?: ReactNode;
+    previewAfter?: ReactNode;
 };
 
 export type OutdatedLabImport = {
@@ -55,15 +57,15 @@ export type WriterWorkspaceController = {
     previewSyncMode: WriterPreviewSyncMode;
     setPreviewSyncMode: (value: WriterPreviewSyncMode) => void;
     showInspector: boolean;
-    setShowInspector: React.Dispatch<React.SetStateAction<boolean>>;
+    setShowInspector: Dispatch<SetStateAction<boolean>>;
     inspectorSection: WriterInspectorSection;
     setInspectorSection: (value: WriterInspectorSection) => void;
     showMeta: boolean;
-    setShowMeta: React.Dispatch<React.SetStateAction<boolean>>;
+    setShowMeta: Dispatch<SetStateAction<boolean>>;
     normalizedSections: WriterProjectSection[];
     activeSection: WriterProjectSection;
     editorContent: string;
-    setEditorContent: React.Dispatch<React.SetStateAction<string>>;
+    setEditorContent: Dispatch<SetStateAction<string>>;
     previewContent: string;
     compiledProjectContent: string;
     deferredTitle: string;
@@ -108,11 +110,11 @@ export type WriterWorkspaceController = {
     handleRemoveSection: (sectionId: string) => void;
     handleUpdateActiveSection: (patch: Partial<WriterProjectSection>) => void;
     insertSnippet: (snippet: string) => void;
-    handleImportSavedLaboratoryResult: (payload: import("@/lib/live-writer-bridge").WriterImportPayload) => void;
+    handleImportSavedLaboratoryResult: (payload: WriterImportPayload) => void;
     handleUpdateSavedResultImport: (item: OutdatedLabImport) => void;
     handleDismissSavedResultImport: (item: OutdatedLabImport) => void;
     handleInsertCitation: (citation: string, inlineRef: string) => void;
-    applyTemplate: (template: import("@/lib/writer-templates").WriterTemplate) => void;
+    applyTemplate: (template: WriterTemplate) => void;
     handleRestoreSnapshot: (snapshot: WriterRevisionSnapshot) => void;
     exportPreflightReport: () => void;
     createRevisionSnapshotFromCurrent: (label: string) => WriterRevisionSnapshot;
