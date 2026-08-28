@@ -14,16 +14,17 @@ export function ThemeToggle() {
 
     const activeTheme = mounted ? resolvedTheme ?? theme : "dark";
     const isDark = activeTheme === "dark";
+    const nextThemeLabel = isDark ? "Light mode" : "Dark mode";
 
     return (
         <button
             type="button"
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="site-toggle inline-flex h-11 items-center gap-2 rounded-full border border-border/70 bg-background px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-muted"
-            aria-label="Toggle theme"
+            className="site-toggle inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            aria-label={nextThemeLabel}
+            title={nextThemeLabel}
         >
             {isDark ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
-            <span>{isDark ? "Light" : "Dark"}</span>
         </button>
     );
 }

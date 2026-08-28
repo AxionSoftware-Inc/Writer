@@ -1,6 +1,5 @@
 import { fetchPublic } from "@/lib/api";
-
-import type { PaperFormData } from "@/components/paper-editor-workspace";
+import type { WriterDocument } from "@/lib/writer-document";
 
 export type WriterPaperRecord = {
     id: number;
@@ -13,7 +12,7 @@ export type WriterPaperRecord = {
     branding_enabled: boolean;
     branding_label: string;
     status: string;
-    sections: PaperFormData["sections"];
+    sections: WriterDocument["sections"];
     section_count?: number;
     created_at: string;
     updated_at: string;
@@ -22,18 +21,17 @@ export type WriterPaperRecord = {
 async function parseApiError(response: Response) {
     try {
         const data = await response.json();
-        if (typeof data?.detail === "string") {
-            return data.detail;
-        }
+        if (typeof data?.detail === "string") return data.detail;
         return JSON.stringify(data);
     } catch {
         return `Request failed with status ${response.status}`;
     }
 }
 
-function normalizeWriterPayload(payload: PaperFormData) {
+function normalizeWriterPayload(payload: WriterDocument) {
+    const { schemaVersion: _schemaVersion, ...serverPayload } = payload;
     return {
-        ...payload,
+        ...serverPayload,
         sections: payload.sections.map((section, index) => {
             const normalized: Record<string, unknown> = {
                 title: section.title,
@@ -44,11 +42,8 @@ function normalizeWriterPayload(payload: PaperFormData) {
                 content: section.content,
             };
 
-            if (typeof section.id === "number") {
-                normalized.id = section.id;
-            } else if (typeof section.id === "string" && /^\d+$/.test(section.id.trim())) {
-                normalized.id = Number(section.id);
-            }
+            if (typeof section.id === "number") normalized.id = section.id;
+            else if (typeof section.id === "string" && /^\d+$/.test(section.id.trim())) normalized.id = Number(section.id);
 
             return normalized;
         }),
@@ -57,39 +52,29 @@ function normalizeWriterPayload(payload: PaperFormData) {
 
 export async function fetchWriterPaper(id: string | number) {
     const response = await fetchPublic(`/api/builder/papers/${id}/`);
-    if (!response.ok) {
-        throw new Error(await parseApiError(response));
-    }
+    if (!response.ok) throw new Error(await parseApiError(response));
     return (await response.json()) as WriterPaperRecord;
 }
 
-export async function createWriterPaper(payload: PaperFormData) {
+export async function createWriterPaper(payload: WriterDocument) {
     const response = await fetchPublic("/api/builder/papers/", {
         method: "POST",
         body: JSON.stringify(normalizeWriterPayload(payload)),
     });
-    if (!response.ok) {
-        throw new Error(await parseApiError(response));
-    }
+    if (!response.ok) throw new Error(await parseApiError(response));
     return (await response.json()) as WriterPaperRecord;
 }
 
-export async function updateWriterPaper(id: string | number, payload: PaperFormData) {
+export async function updateWriterPaper(id: string | number, payload: WriterDocument) {
     const response = await fetchPublic(`/api/builder/papers/${id}/`, {
         method: "PUT",
         body: JSON.stringify(normalizeWriterPayload(payload)),
     });
-    if (!response.ok) {
-        throw new Error(await parseApiError(response));
-    }
+    if (!response.ok) throw new Error(await parseApiError(response));
     return (await response.json()) as WriterPaperRecord;
 }
 
 export async function deleteWriterPaper(id: string | number) {
-    const response = await fetchPublic(`/api/builder/papers/${id}/`, {
-        method: "DELETE",
-    });
-    if (!response.ok) {
-        throw new Error(await parseApiError(response));
-    }
+    const response = await fetchPublic(`/api/builder/papers/${id}/`, { method: "DELETE" });
+    if (!response.ok) throw new Error(await parseApiError(response));
 }

@@ -1,27 +1,43 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { compile } from 'mathjs';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { compile } from "mathjs";
 
-// Dynamically import Plotly to avoid SSR issues
-const Plot = dynamic(() => import('react-plotly.js'), { 
-    ssr: false, 
-    loading: () => <div className="w-full h-64 flex items-center justify-center bg-muted/20 border border-border/50 rounded-xl">Grafik yuklanmoqda...</div>
+const Plot = dynamic(() => import("react-plotly.js"), {
+    ssr: false,
+    loading: () => (
+        <div className="writer-plot-shell my-6 flex min-h-56 items-center justify-center rounded-xl border border-black/10 bg-[#f0eee8] text-sm text-slate-500">
+            Grafik tayyorlanmoqda...
+        </div>
+    ),
 });
 
 interface PlotProp {
     code: string;
-    type: 'plot2d' | 'plot3d';
+    type: "plot2d" | "plot3d";
 }
+
+type PlotPayload =
+    | {
+          data: unknown[];
+          layout: Record<string, unknown>;
+          error?: never;
+      }
+    | {
+          error: string;
+          data?: never;
+          layout?: never;
+      };
 
 function clampSteps(value: unknown, fallback: number, min: number, max: number) {
     const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) {
-        return fallback;
-    }
-
+    if (!Number.isFinite(numericValue)) return fallback;
     return Math.min(max, Math.max(min, Math.round(numericValue)));
+}
+
+function finiteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
 }
 
 export const PlotRenderer = React.memo(function PlotRenderer({ code, type }: PlotProp) {
@@ -29,16 +45,11 @@ export const PlotRenderer = React.memo(function PlotRenderer({ code, type }: Plo
     const [shouldRender, setShouldRender] = useState(false);
 
     useEffect(() => {
-        if (shouldRender) {
-            return;
-        }
+        if (shouldRender) return;
 
         const node = containerRef.current;
-        if (!node || typeof IntersectionObserver === 'undefined') {
-            const frameId = window.requestAnimationFrame(() => {
-                setShouldRender(true);
-            });
-
+        if (!node || typeof IntersectionObserver === "undefined") {
+            const frameId = window.requestAnimationFrame(() => setShouldRender(true));
             return () => window.cancelAnimationFrame(frameId);
         }
 
@@ -49,7 +60,8 @@ export const PlotRenderer = React.memo(function PlotRenderer({ code, type }: Plo
                     observer.disconnect();
                 }
             },
-            { rootMargin: '480px 0px' },
+            // Plotly is a large client module. Do not wake it up several screens early.
+            { rootMargin: "180px 0px" },
         );
 
         observer.observe(node);
@@ -59,165 +71,167 @@ export const PlotRenderer = React.memo(function PlotRenderer({ code, type }: Plo
     const plotMeta = useMemo(() => {
         try {
             const config = JSON.parse(code);
-            const expression = config.f || config.expression || 'x^2';
+            const expression = config.f || config.expression || "x^2";
             return {
-                title: config.title || (type === 'plot3d' ? `f(x,y) = ${expression}` : `f(x) = ${expression}`),
+                title: config.title || (type === "plot3d" ? `f(x,y) = ${expression}` : `f(x) = ${expression}`),
                 expression,
                 description:
-                    type === 'plot3d'
-                        ? '3D surface preview viewportga kelganda yuklanadi.'
-                        : 'Grafik preview viewportga kelganda yuklanadi.',
+                    type === "plot3d"
+                        ? "3D surface preview faqat ko‘rinadigan hududga yaqinlashganda hisoblanadi."
+                        : "Grafik preview faqat ko‘rinadigan hududga yaqinlashganda hisoblanadi.",
             };
         } catch {
             return {
-                title: type === 'plot3d' ? '3D grafik' : '2D grafik',
-                expression: '',
-                description: 'Grafik konfiguratsiyasi viewportga kelganda tekshiriladi.',
+                title: type === "plot3d" ? "3D grafik" : "2D grafik",
+                expression: "",
+                description: "Grafik konfiguratsiyasi render vaqtida tekshiriladi.",
             };
         }
     }, [code, type]);
 
-    const plotData = useMemo(() => {
-        if (!shouldRender) {
-            return null;
-        }
+    const plotData = useMemo<PlotPayload | null>(() => {
+        if (!shouldRender) return null;
 
         try {
-            // Attempt to parse JSON config
             const config = JSON.parse(code);
-            const expression = config.f || config.expression || 'x^2';
+            const expression = config.f || config.expression || "x^2";
             const compiledExpr = compile(expression);
 
-            if (type === 'plot2d') {
-                const domain = config.domain || [-10, 10];
-                const steps = clampSteps(config.previewSteps ?? config.steps, 200, 80, 360);
-                
-                const xValues = [];
-                const yValues = [];
-                const step = (domain[1] - domain[0]) / steps;
+            if (type === "plot2d") {
+                const domain = Array.isArray(config.domain) && config.domain.length >= 2 ? config.domain : [-10, 10];
+                const steps = clampSteps(config.previewSteps ?? config.steps, 160, 72, 280);
+                const start = Number(domain[0]);
+                const end = Number(domain[1]);
+                const step = (end - start) / steps;
+                const xValues: number[] = [];
+                const yValues: Array<number | null> = [];
 
-                for (let x = domain[0]; x <= domain[1]; x += step) {
+                for (let index = 0; index <= steps; index += 1) {
+                    const x = start + step * index;
                     xValues.push(x);
                     try {
                         const y = compiledExpr.evaluate({ x });
-                        // Handle complex outputs or infinities 
-                        if (typeof y === 'number' && !isNaN(y) && isFinite(y)) {
-                            yValues.push(y);
-                        } else {
-                            yValues.push(null); // breaks the line
-                        }
+                        yValues.push(finiteNumber(y) ? y : null);
                     } catch {
                         yValues.push(null);
                     }
                 }
 
                 return {
-                    data: [{
-                        x: xValues,
-                        y: yValues,
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: { color: '#6366f1', width: 2 }, // Indigo 500
-                        name: `f(x) = ${expression}`
-                    }],
+                    data: [
+                        {
+                            x: xValues,
+                            y: yValues,
+                            type: "scatter",
+                            mode: "lines",
+                            line: { color: "#5369c9", width: 2.4 },
+                            name: `f(x) = ${expression}`,
+                        },
+                    ],
                     layout: {
-                        title: config.title || `f(x) = ${expression}`,
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent',
-                        font: { color: '#71717a' }, // muted-foreground
-                        margin: { l: 40, r: 20, t: 40, b: 40 },
-                        xaxis: { gridcolor: '#e4e4e7' },
-                        yaxis: { gridcolor: '#e4e4e7' }
-                    }
+                        title: { text: config.title || `f(x) = ${expression}`, font: { size: 15, color: "#31353a" } },
+                        paper_bgcolor: "transparent",
+                        plot_bgcolor: "transparent",
+                        font: { color: "#6c7178", family: "Manrope, system-ui, sans-serif", size: 11 },
+                        margin: { l: 48, r: 22, t: 52, b: 44 },
+                        hovermode: "closest",
+                        xaxis: {
+                            gridcolor: "rgba(50, 54, 60, 0.10)",
+                            zerolinecolor: "rgba(50, 54, 60, 0.18)",
+                        },
+                        yaxis: {
+                            gridcolor: "rgba(50, 54, 60, 0.10)",
+                            zerolinecolor: "rgba(50, 54, 60, 0.18)",
+                        },
+                    },
                 };
-            } else if (type === 'plot3d') {
-                const xDomain = config.xDomain || [-5, 5];
-                const yDomain = config.yDomain || [-5, 5];
-                const steps = clampSteps(config.previewSteps ?? config.steps, 28, 12, 36);
+            }
 
-                const xValues = [];
-                const yValues = [];
-                const zValues = [];
+            const xDomain = Array.isArray(config.xDomain) && config.xDomain.length >= 2 ? config.xDomain : [-5, 5];
+            const yDomain = Array.isArray(config.yDomain) && config.yDomain.length >= 2 ? config.yDomain : [-5, 5];
+            // The preview is intentionally lighter than an analysis render. Users can
+            // request a higher value explicitly via previewSteps if they need it.
+            const steps = clampSteps(config.previewSteps ?? config.steps, 24, 12, 32);
+            const xValues: number[] = [];
+            const yValues: number[] = [];
+            const zValues: Array<Array<number | null>> = [];
+            const xStart = Number(xDomain[0]);
+            const xEnd = Number(xDomain[1]);
+            const yStart = Number(yDomain[0]);
+            const yEnd = Number(yDomain[1]);
 
-                const xStep = (xDomain[1] - xDomain[0]) / steps;
-                const yStep = (yDomain[1] - yDomain[0]) / steps;
+            for (let index = 0; index <= steps; index += 1) {
+                xValues.push(xStart + ((xEnd - xStart) * index) / steps);
+                yValues.push(yStart + ((yEnd - yStart) * index) / steps);
+            }
 
-                for (let x = xDomain[0]; x <= xDomain[1]; x += xStep) {
-                    xValues.push(x);
-                }
-                for (let y = yDomain[0]; y <= yDomain[1]; y += yStep) {
-                    yValues.push(y);
-                }
-
-                for (const y of yValues) {
-                    const zRow = [];
-                    for (const x of xValues) {
-                        try {
-                            const z = compiledExpr.evaluate({ x, y });
-                            if (typeof z === 'number' && !isNaN(z) && isFinite(z)) {
-                                zRow.push(z);
-                            } else {
-                                zRow.push(null);
-                            }
-                        } catch {
-                            zRow.push(null);
-                        }
+            for (const y of yValues) {
+                const row: Array<number | null> = [];
+                for (const x of xValues) {
+                    try {
+                        const z = compiledExpr.evaluate({ x, y });
+                        row.push(finiteNumber(z) ? z : null);
+                    } catch {
+                        row.push(null);
                     }
-                    zValues.push(zRow);
                 }
+                zValues.push(row);
+            }
 
-                return {
-                    data: [{
+            return {
+                data: [
+                    {
                         x: xValues,
                         y: yValues,
                         z: zValues,
-                        type: 'surface',
-                        colorscale: 'Viridis',
-                        showscale: false
-                    }],
-                    layout: {
-                        title: config.title || `f(x,y) = ${expression}`,
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent',
-                        font: { color: '#71717a' },
-                        margin: { l: 0, r: 0, t: 40, b: 0 },
-                        scene: {
-                            xaxis: { title: 'X' },
-                            yaxis: { title: 'Y' },
-                            zaxis: { title: 'Z' }
-                        }
-                    }
-                };
-            }
+                        type: "surface",
+                        colorscale: "Viridis",
+                        showscale: false,
+                    },
+                ],
+                layout: {
+                    title: { text: config.title || `f(x,y) = ${expression}`, font: { size: 15, color: "#31353a" } },
+                    paper_bgcolor: "transparent",
+                    plot_bgcolor: "transparent",
+                    font: { color: "#6c7178", family: "Manrope, system-ui, sans-serif", size: 11 },
+                    margin: { l: 0, r: 0, t: 52, b: 0 },
+                    scene: {
+                        bgcolor: "transparent",
+                        xaxis: { title: "X", gridcolor: "rgba(50, 54, 60, 0.10)" },
+                        yaxis: { title: "Y", gridcolor: "rgba(50, 54, 60, 0.10)" },
+                        zaxis: { title: "Z", gridcolor: "rgba(50, 54, 60, 0.10)" },
+                    },
+                },
+            };
         } catch (error: unknown) {
             return { error: `Parsing error: ${error instanceof Error ? error.message : String(error)}` };
         }
-        return { error: 'Unknown type' };
     }, [code, shouldRender, type]);
 
     if (!shouldRender) {
         return (
             <div
                 ref={containerRef}
-                className="my-6 flex min-h-52 flex-col justify-between rounded-2xl border border-border/50 bg-background/70 p-5 shadow-sm"
+                className="writer-plot-shell my-6 flex min-h-48 flex-col justify-between rounded-xl border border-black/10 bg-[#f0eee8] p-5 shadow-none"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "220px" }}
             >
                 <div>
-                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                        {type === 'plot3d' ? '3D Plot Queue' : 'Plot Queue'}
+                    <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        {type === "plot3d" ? "3D plot" : "Plot"}
                     </div>
-                    <div className="mt-2 text-lg font-black">{plotMeta.title}</div>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{plotMeta.description}</p>
+                    <div className="mt-2 text-base font-black text-slate-800">{plotMeta.title}</div>
+                    <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-500">{plotMeta.description}</p>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <div className="rounded-full border border-border/60 bg-background/75 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground">
-                        {plotMeta.expression || 'Expression hidden'}
+                    <div className="max-w-[70%] truncate rounded-md border border-black/10 bg-white/55 px-2.5 py-1.5 font-mono text-[10px] text-slate-500">
+                        {plotMeta.expression || "Expression hidden"}
                     </div>
                     <button
                         type="button"
                         onClick={() => setShouldRender(true)}
-                        className="rounded-full border border-border/60 bg-background/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+                        className="rounded-md border border-black/10 bg-white/65 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                     >
-                        Hozir render qilish
+                        Render now
                     </button>
                 </div>
             </div>
@@ -226,35 +240,33 @@ export const PlotRenderer = React.memo(function PlotRenderer({ code, type }: Plo
 
     if (plotData?.error) {
         return (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl my-4 text-sm font-mono">
+            <div className="my-4 rounded-lg border border-red-500/20 bg-red-500/10 p-4 font-mono text-sm text-red-600">
                 [Plot rendering failed: {plotData.error}]
             </div>
         );
     }
 
-    if (!plotData) {
-        return null;
-    }
+    if (!plotData) return null;
 
     const PlotComponent = Plot as unknown as React.ComponentType<{
-        data: unknown;
-        layout: unknown;
+        data: unknown[];
+        layout: Record<string, unknown>;
         useResizeHandler: boolean;
         className: string;
-        config: { displayModeBar: boolean; responsive: boolean };
+        config: { displayModeBar: boolean; responsive: boolean; scrollZoom: boolean; doubleClick: false | "reset" | "autosize" | "reset+autosize" };
     }>;
 
     return (
-        <div className="my-6 rounded-2xl overflow-hidden border border-border/50 bg-background shadow-sm hover:shadow-md transition-shadow">
+        <div
+            className="writer-plot-shell my-6 overflow-hidden rounded-xl border border-black/10 bg-[#f0eee8] shadow-none"
+            style={{ contentVisibility: "auto", containIntrinsicSize: type === "plot3d" ? "430px" : "360px" }}
+        >
             <PlotComponent
                 data={plotData.data}
-                layout={{
-                    ...plotData.layout,
-                    autosize: true
-                }}
-                useResizeHandler={true}
-                className="w-full h-[400px] md:h-[500px]"
-                config={{ displayModeBar: false, responsive: true }}
+                layout={{ ...plotData.layout, autosize: true }}
+                useResizeHandler
+                className={type === "plot3d" ? "h-[380px] w-full md:h-[430px]" : "h-[320px] w-full md:h-[360px]"}
+                config={{ displayModeBar: false, responsive: true, scrollZoom: false, doubleClick: "reset" }}
             />
         </div>
     );

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
     ArrowRight,
     BookOpen,
+    Check,
     FlaskConical,
     GraduationCap,
     Newspaper,
@@ -48,9 +49,7 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
     const [selectedTemplateId, setSelectedTemplateId] = React.useState(DEFAULT_WRITER_TEMPLATE_ID);
 
     React.useEffect(() => {
-        if (isOpen) {
-            setSelectedTemplateId(DEFAULT_WRITER_TEMPLATE_ID);
-        }
+        if (isOpen) setSelectedTemplateId(DEFAULT_WRITER_TEMPLATE_ID);
     }, [isOpen]);
 
     const selectedTemplate =
@@ -63,9 +62,7 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
     );
     const SelectedIcon = iconMap[selectedTemplate.icon];
 
-    if (!isOpen) {
-        return null;
-    }
+    if (!isOpen) return null;
 
     const openDraftWithTemplate = (templateId: string) => {
         const query = new URLSearchParams();
@@ -75,45 +72,33 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-            <div className="absolute inset-0 bg-black/28" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 lg:p-8">
+            <button
+                type="button"
+                aria-label="Close template picker"
+                className="absolute inset-0 cursor-default bg-black/55 backdrop-blur-[2px]"
+                onClick={onClose}
+            />
 
-            <div className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-border/70 bg-background shadow-xl">
-                <div className="border-b border-border/60 bg-background/95 px-6 py-5 md:px-8 md:py-6">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="max-w-3xl">
-                            <div className="site-eyebrow">Writer Templates</div>
-                            <h2 className="mt-2 font-serif text-3xl font-black tracking-tight md:text-4xl">
-                                Professional hujjatni to'g'ri format bilan boshlang
-                            </h2>
-                            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-                                Template kutubxonasi qayta tartiblandi. Endi faqat asosiy, professional va amalda
-                                kerak bo'ladigan 6 ta start format qoldirilgan.
-                            </p>
+            <div className="relative grid max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border/70 bg-background shadow-2xl lg:grid-cols-[310px_minmax(0,1fr)]">
+                <section className="flex min-h-0 flex-col border-b border-border/60 bg-muted/10 lg:border-b-0 lg:border-r">
+                    <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-4">
+                        <div>
+                            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">New document</div>
+                            <h2 className="mt-1 text-base font-black tracking-tight">Choose a template</h2>
                         </div>
-
                         <button
                             onClick={onClose}
-                            className="rounded-full border border-border/60 bg-background/80 p-2.5 text-muted-foreground transition-colors hover:text-foreground"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground lg:hidden"
                             type="button"
+                            aria-label="Close"
                         >
-                            <X className="h-5 w-5" />
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
-                </div>
 
-                <div className="grid min-h-0 flex-1 gap-0 xl:grid-cols-[360px_minmax(0,1fr)]">
-                    <div className="min-h-0 overflow-y-auto border-b border-border/60 bg-background p-5 md:p-6 xl:border-b-0 xl:border-r">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <div className="site-eyebrow">Core Library</div>
-                            </div>
-                            <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                                {writerTemplates.length} templates
-                            </div>
-                        </div>
-
-                        <div className="mt-5 space-y-2.5">
+                    <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
+                        <div className="space-y-1">
                             {writerTemplates.map((template) => {
                                 const Icon = iconMap[template.icon];
                                 const selected = template.id === selectedTemplate.id;
@@ -123,118 +108,125 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
                                         key={template.id}
                                         type="button"
                                         onClick={() => setSelectedTemplateId(template.id)}
-                                        className={`w-full rounded-[1.2rem] border px-4 py-3.5 text-left transition-colors ${
+                                        className={`group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                                             selected
-                                                ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
-                                                : "border-border/60 bg-background/70 hover:border-[var(--accent)]/20 hover:bg-background"
+                                                ? "border-foreground/15 bg-foreground text-background"
+                                                : "border-transparent hover:border-border/60 hover:bg-background"
                                         }`}
                                     >
-                                        <div className="flex items-center justify-between gap-4">
-                                            <div className="flex min-w-0 items-center gap-3">
-                                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${template.accentClassName}`}>
-                                                    <Icon className="h-4.5 w-4.5" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="truncate text-sm font-bold tracking-tight">{template.title}</div>
-                                                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                                                        {templateCategoryLabel(template.category)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {selected ? (
-                                                <span className="rounded-full border border-[var(--accent)]/30 bg-background/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground">
-                                                    Active
-                                                </span>
-                                            ) : null}
-                                        </div>
+                                        <span
+                                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
+                                                selected ? "border-background/20 bg-background/10" : template.accentClassName
+                                            }`}
+                                        >
+                                            <Icon className="h-3.5 w-3.5" />
+                                        </span>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-xs font-bold">{template.title}</span>
+                                            <span
+                                                className={`mt-0.5 block text-[9px] font-bold uppercase tracking-[0.12em] ${
+                                                    selected ? "text-background/55" : "text-muted-foreground"
+                                                }`}
+                                            >
+                                                {templateCategoryLabel(template.category)}
+                                            </span>
+                                        </span>
+                                        {selected ? <Check className="h-3.5 w-3.5 shrink-0" /> : null}
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    <aside className="min-h-0 overflow-y-auto bg-muted/15 p-6 md:p-8">
-                        <div className="site-panel-strong p-5 md:p-6">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className={`flex h-14 w-14 items-center justify-center rounded-[1.25rem] border ${selectedTemplate.accentClassName}`}>
-                                    <SelectedIcon className="h-6 w-6" />
-                                </div>
-                                <span className="rounded-full border border-border/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                                    {templateCategoryLabel(selectedTemplate.category)}
-                                </span>
+                    <div className="border-t border-border/60 px-4 py-3 text-[10px] leading-5 text-muted-foreground">
+                        {writerTemplates.length} professional starting structures. You can still edit every section later.
+                    </div>
+                </section>
+
+                <section className="min-h-0 overflow-y-auto bg-background">
+                    <div className="sticky top-0 z-10 flex items-center justify-end border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm">
+                        <button
+                            onClick={onClose}
+                            className="hidden h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground lg:flex"
+                            type="button"
+                            aria-label="Close"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+
+                    <div className="mx-auto max-w-2xl p-5 sm:p-7 lg:p-9">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${selectedTemplate.accentClassName}`}>
+                                <SelectedIcon className="h-5 w-5" />
                             </div>
-
-                            <h3 className="mt-4 font-serif text-2xl font-black">{selectedTemplate.title}</h3>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedTemplate.description}</p>
-
-                            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Category</div>
-                                    <div className="mt-2 text-sm font-bold text-foreground">{templateCategoryLabel(selectedTemplate.category)}</div>
-                                </div>
-                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Use Case</div>
-                                    <div className="mt-2 text-sm font-bold text-foreground">{selectedTemplate.recommendedFor.length}</div>
-                                </div>
-                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Add-ons</div>
-                                    <div className="mt-2 text-sm font-bold text-foreground">{selectedAddOns.length}</div>
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => openDraftWithTemplate(selectedTemplate.id)}
-                                className="site-button-primary mt-6 w-full"
-                            >
-                                Shu template bilan davom etish
-                                <ArrowRight className="h-4 w-4" />
-                            </button>
+                            <span className="rounded-md border border-border/60 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                                {templateCategoryLabel(selectedTemplate.category)}
+                            </span>
                         </div>
 
-                        <div className="mt-4 grid gap-4">
-                            <div className="site-panel p-4">
-                                <div className="site-eyebrow">Best For</div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {selectedTemplate.recommendedFor.map((item) => (
-                                        <span key={item} className="site-chip !px-3 !py-2 !text-[10px]">
-                                            {item}
-                                        </span>
+                        <h3 className="mt-5 font-serif text-3xl font-black tracking-tight sm:text-4xl">{selectedTemplate.title}</h3>
+                        <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">{selectedTemplate.description}</p>
+
+                        <div className="mt-7 grid gap-6 sm:grid-cols-2">
+                            <div>
+                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Best for</div>
+                                <div className="mt-3 space-y-2">
+                                    {selectedTemplate.recommendedFor.slice(0, 5).map((item) => (
+                                        <div key={item} className="flex items-start gap-2 text-sm leading-6 text-foreground/80">
+                                            <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                                            <span>{item}</span>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="site-panel p-4">
-                                <div className="site-eyebrow">Included Structure</div>
+                            <div>
+                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Included structure</div>
                                 <div className="mt-3 space-y-2">
                                     {selectedAddOns.length ? (
-                                        selectedAddOns.map((addOn) => (
-                                            <div key={addOn.id} className="site-outline-card px-3 py-3">
+                                        selectedAddOns.slice(0, 5).map((addOn) => (
+                                            <div key={addOn.id} className="border-b border-border/50 pb-2 last:border-0">
                                                 <div className="text-sm font-semibold">{addOn.title}</div>
-                                                <div className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                                                    {addOn.description}
-                                                </div>
+                                                <div className="mt-0.5 text-[11px] leading-5 text-muted-foreground">{addOn.description}</div>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="site-outline-card px-3 py-3 text-sm leading-6 text-muted-foreground">
-                                            Bu template asosiy professional skelet bilan ochiladi. Qo'shimcha bloklar
-                                            majburiy emas.
-                                        </div>
+                                        <p className="text-sm leading-6 text-muted-foreground">
+                                            A clean core structure without mandatory add-ons.
+                                        </p>
                                     )}
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="site-panel p-4">
-                                <div className="site-eyebrow">Template Note</div>
-                                <div className="mt-3 rounded-[1.2rem] border border-border/60 bg-background/70 px-3 py-3 text-sm leading-6 text-muted-foreground">
-                                    Har bir template edit vaqtida keyin ham almashtirilishi mumkin, lekin boshlanishida
-                                    to'g'ri format tanlash writer ichidagi section strukturasini ancha silliq qiladi.
+                        <div className="mt-8 rounded-xl border border-border/60 bg-muted/10 p-4">
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                                <div>
+                                    <div className="text-lg font-black">{selectedTemplate.recommendedFor.length}</div>
+                                    <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Use cases</div>
+                                </div>
+                                <div className="border-x border-border/60">
+                                    <div className="text-lg font-black">{selectedAddOns.length}</div>
+                                    <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Add-ons</div>
+                                </div>
+                                <div>
+                                    <div className="text-lg font-black">1</div>
+                                    <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Workspace</div>
                                 </div>
                             </div>
                         </div>
-                    </aside>
-                </div>
+
+                        <button
+                            type="button"
+                            onClick={() => openDraftWithTemplate(selectedTemplate.id)}
+                            className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-foreground px-5 text-sm font-bold text-background transition-opacity hover:opacity-92"
+                        >
+                            Start with this template
+                            <ArrowRight className="h-4 w-4" />
+                        </button>
+                    </div>
+                </section>
             </div>
         </div>
     );

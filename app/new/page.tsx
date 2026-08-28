@@ -1,18 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-
-import {
-    PaperEditorWorkspace,
-    type PaperFormData,
-} from "@/components/paper-editor-workspace";
+import { WriterWorkspace } from "@/components/writer";
+import { normalizeWriterDocument, type WriterDocument } from "@/lib/writer-document";
 import { readQueuedWriterImport, removeQueuedWriterImport, serializeWriterBridgeBlock } from "@/lib/live-writer-bridge";
 import { createWriterPaper } from "@/lib/writer-api";
 import { compileWriterProjectSections } from "@/lib/writer-project";
+import { reconcileWriterTemplateApplication } from "@/lib/writer-template-application";
 import { createDraftFromTemplate, getDefaultWriterTemplate, getWriterTemplate, getWriterTemplatePreset } from "@/lib/writer-templates";
-
 
 function NewPaperPageContent() {
     const router = useRouter();
@@ -31,24 +28,22 @@ function NewPaperPageContent() {
     const selectedTemplate = getWriterTemplate(templateId || selectedPreset?.templateId) ?? getDefaultWriterTemplate();
     const resolvedAddOnIds = addOnIds.length ? addOnIds : selectedPreset?.addOnIds ?? [];
 
-    const [formData, setFormData] = useState<PaperFormData>(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds));
-
+    const [formData, setFormData] = useState<WriterDocument>(() =>
+        normalizeWriterDocument(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds)),
+    );
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
-    useEffect(() => {
-        if (importedFromLaboratory.current || typeof window === "undefined") {
-            return;
-        }
+    const handleFormChange = useCallback((next: WriterDocument) => {
+        setFormData(reconcileWriterTemplateApplication(next));
+    }, []);
 
-        if (source !== "laboratory") {
-            return;
-        }
+    useEffect(() => {
+        if (importedFromLaboratory.current || typeof window === "undefined") return;
+        if (source !== "laboratory") return;
 
         const laboratoryExport = readQueuedWriterImport(importId);
-        if (!laboratoryExport) {
-            return;
-        }
+        if (!laboratoryExport) return;
 
         importedFromLaboratory.current = true;
         removeQueuedWriterImport(importId);
@@ -62,10 +57,7 @@ function NewPaperPageContent() {
                 const nextSections = current.sections.length
                     ? current.sections.map((section, index) =>
                           index === 0
-                              ? {
-                                    ...section,
-                                    content: `${importedSections.join("\n\n")}\n\n---\n\n${section.content}`,
-                                }
+                              ? { ...section, content: `${importedSections.join("\n\n")}\n\n---\n\n${section.content}` }
                               : section,
                       )
                     : current.sections;
@@ -93,29 +85,26 @@ function NewPaperPageContent() {
         return () => window.clearTimeout(timer);
     }, [importId, source]);
 
-    async function handleSubmit(nextData?: PaperFormData) {
+    async function handleSubmit(nextData?: WriterDocument) {
         setStatus("submitting");
         setErrorMessage("");
-
         try {
-            const payload = nextData ?? formData;
-            await createWriterPaper(payload);
+            const payload = reconcileWriterTemplateApplication(nextData ?? formData);
+            const created = await createWriterPaper(payload);
             setStatus("success");
-            setTimeout(() => {
-                router.push("/");
-            }, 900);
+            router.replace(`/${created.id}`);
         } catch (error) {
             console.error("Submission error:", error);
-            setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
+            setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog‘lanishda muammo.");
             setStatus("error");
         }
     }
 
     return (
         <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden">
-            <PaperEditorWorkspace
+            <WriterWorkspace
                 formData={formData}
-                onChange={setFormData}
+                onChange={handleFormChange}
                 onSubmit={handleSubmit}
                 saveState={status}
                 errorMessage={errorMessage}
@@ -129,7 +118,7 @@ function NewPaperPageContent() {
 function NewPaperPageFallback() {
     return (
         <div className="flex h-dvh min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-background text-muted-foreground">
-            <p>Writer yuklanmoqda...</p>
+            <p>Writer yuklanmoqda…</p>
         </div>
     );
 }

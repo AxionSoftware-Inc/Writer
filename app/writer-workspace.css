@@ -1,0 +1,43 @@
+/* Modular Writer workspace additions. Keep this file small and structural. */
+
+.writer-field {
+  width: 100%;
+  border: 1px solid var(--writer-line);
+  border-radius: 0.72rem;
+  background: var(--writer-surface-subtle);
+  padding: 0.68rem 0.78rem;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.writer-field:focus {
+  border-color: var(--writer-line-strong);
+  background: var(--writer-surface-solid);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-soft) 70%, transparent);
+}
+
+.writer-field::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.72;
+}
+
+/* The refactored inspector exposes four domain-level modes. */
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child .grid.grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.24rem;
+}
+
+.site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child .grid.grid-cols-4 button {
+  min-width: 0;
+  min-height: 2rem;
+  padding: 0.4rem 0.28rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .site-workspace-shell aside.site-panel > div > .site-panel-strong:first-child .grid.grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
