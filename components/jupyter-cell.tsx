@@ -1,82 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Check, Code2, Loader2, Play, Terminal } from "lucide-react";
 
-interface PyodideWindow extends Window {
-    loadPyodide?: (config: { indexURL: string }) => Promise<any>;
-}
+import { executeWriterPython } from "@/lib/writer-python-runtime";
 
-type DestroyableProxy = {
-    destroy?: () => void;
-};
-
-const PYODIDE_INDEX_URL = "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/";
-const PYODIDE_SCRIPT_URL = `${PYODIDE_INDEX_URL}pyodide.js`;
 const MAX_OUTPUT_CHARACTERS = 120_000;
-
-let pyodideScriptPromise: Promise<void> | null = null;
-let sharedPyodidePromise: Promise<any> | null = null;
-let executionQueue: Promise<void> = Promise.resolve();
-
-function ensurePyodideScript() {
-    if (typeof window === "undefined") {
-        return Promise.reject(new Error("Python engine faqat brauzerda ishlaydi."));
-    }
-
-    const pyodideWindow = window as PyodideWindow;
-    if (typeof pyodideWindow.loadPyodide === "function") return Promise.resolve();
-
-    if (!pyodideScriptPromise) {
-        pyodideScriptPromise = new Promise<void>((resolve, reject) => {
-            const existing = document.querySelector<HTMLScriptElement>(`script[src="${PYODIDE_SCRIPT_URL}"]`);
-            if (existing) {
-                if (typeof pyodideWindow.loadPyodide === "function") {
-                    resolve();
-                    return;
-                }
-                existing.addEventListener("load", () => resolve(), { once: true });
-                existing.addEventListener("error", () => reject(new Error("Pyodide script yuklanmadi.")), { once: true });
-                return;
-            }
-
-            const script = document.createElement("script");
-            script.src = PYODIDE_SCRIPT_URL;
-            script.async = true;
-            script.dataset.writerPyodide = "true";
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error("Pyodide script yuklanmadi."));
-            document.head.appendChild(script);
-        });
-    }
-
-    return pyodideScriptPromise;
-}
-
-async function getSharedPyodide() {
-    await ensurePyodideScript();
-
-    if (!sharedPyodidePromise) {
-        sharedPyodidePromise = (async () => {
-            const pyodideWindow = window as PyodideWindow;
-            if (typeof pyodideWindow.loadPyodide !== "function") {
-                throw new Error("Pyodide loader topilmadi.");
-            }
-            return pyodideWindow.loadPyodide({ indexURL: PYODIDE_INDEX_URL });
-        })();
-    }
-
-    return sharedPyodidePromise;
-}
-
-function enqueueExecution<T>(task: () => Promise<T>) {
-    const run = executionQueue.then(task, task);
-    executionQueue = run.then(
-        () => undefined,
-        () => undefined,
-    );
-    return run;
-}
 
 function appendBoundedOutput(current: string, value: string) {
     if (current.length >= MAX_OUTPUT_CHARACTERS) return current;
@@ -87,19 +16,6 @@ function appendBoundedOutput(current: string, value: string) {
     return `${next.slice(0, MAX_OUTPUT_CHARACTERS)}\n… output truncated by Writer …\n`;
 }
 
-function destroyResultProxy(result: unknown) {
-    if (!result || (typeof result !== "object" && typeof result !== "function")) return;
-
-    const destroy = (result as DestroyableProxy).destroy;
-    if (typeof destroy === "function") {
-        try {
-            destroy.call(result);
-        } catch {
-            // A returned JS primitive or already-disposed PyProxy needs no cleanup.
-        }
-    }
-}
-
 export function JupyterTerminalElement({ code: initialCode }: { code: string }) {
     const [code, setCode] = useState(initialCode);
     const [output, setOutput] = useState("");
@@ -107,6 +23,14 @@ export function JupyterTerminalElement({ code: initialCode }: { code: string }) 
     const [isRunning, setIsRunning] = useState(false);
     const [engineStatus, setEngineStatus] = useState<"idle" | "loading" | "ready">("idle");
     const [error, setError] = useState<string | null>(null);
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
 
     const handleRun = async () => {
         if (isRunning) return;
@@ -117,67 +41,33 @@ export function JupyterTerminalElement({ code: initialCode }: { code: string }) 
         setError(null);
         setPlots([]);
 
-        let result: unknown;
         try {
-            result = await enqueueExecution(async () => {
-                const pyodide = await getSharedPyodide();
-                setEngineStatus("ready");
-
-                pyodide.setStdout({
-                    batched: (value: string) =>
-                        setOutput((current) => appendBoundedOutput(current, `${value}\n`)),
-                });
-                pyodide.setStderr({
-                    batched: (value: string) =>
-                        setOutput((current) => appendBoundedOutput(current, `${value}\n`)),
-                });
-
-                if (typeof pyodide.loadPackagesFromImports === "function") {
-                    await pyodide.loadPackagesFromImports(code);
-                }
-
-                const needsMatplotlib = /\bmatplotlib\b|\bplt\./.test(code);
-                if (needsMatplotlib) await pyodide.loadPackage("matplotlib");
-
-                const wrappedCode = needsMatplotlib
-                    ? `
-import io
-import base64
-${code}
-
-try:
-    import matplotlib.pyplot as plt
-    if plt.get_fignums():
-        _writer_buf = io.BytesIO()
-        plt.savefig(_writer_buf, format='png', bbox_inches='tight')
-        _writer_buf.seek(0)
-        _writer_result = base64.b64encode(_writer_buf.read()).decode('utf-8')
-        plt.close('all')
-        _writer_result
-    else:
-        None
-except Exception:
-    None
-`
-                    : code;
-
-                return pyodide.runPythonAsync(wrappedCode);
+            const result = await executeWriterPython(code, {
+                onStatus(status) {
+                    if (!mountedRef.current) return;
+                    setEngineStatus(status);
+                },
+                onOutput(value) {
+                    if (!mountedRef.current) return;
+                    setOutput((current) => appendBoundedOutput(current, value));
+                },
             });
 
-            if (typeof result === "string" && result.length > 100 && !result.includes("\n")) {
-                setPlots([result]);
-            } else if (result !== undefined && result !== null && typeof result !== "function") {
-                const renderedResult = String(result);
+            if (!mountedRef.current) return;
+            if (result.kind === "plot") {
+                setPlots([result.value]);
+            } else if (result.kind === "text" && result.value) {
                 setOutput((current) =>
-                    appendBoundedOutput(current, `${current && !current.endsWith("\n") ? "\n" : ""}${renderedResult}`),
+                    appendBoundedOutput(current, `${current && !current.endsWith("\n") ? "\n" : ""}${result.value}`),
                 );
             }
         } catch (caughtError: unknown) {
             console.error("Python execution error:", caughtError);
-            setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
+            if (mountedRef.current) {
+                setError(caughtError instanceof Error ? caughtError.message : String(caughtError));
+            }
         } finally {
-            destroyResultProxy(result);
-            setIsRunning(false);
+            if (mountedRef.current) setIsRunning(false);
         }
     };
 
