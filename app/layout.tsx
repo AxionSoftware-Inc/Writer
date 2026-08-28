@@ -3,6 +3,7 @@ import { Manrope, Playfair_Display } from "next/font/google";
 
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { EcosystemBar } from "@/components/ecosystem/ecosystem-bar";
 
 const manrope = Manrope({
     subsets: ["latin"],
@@ -15,8 +16,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-    title: "MathSphere Writer",
-    description: "Standalone scientific writing workspace extracted from the Mathematics monolith.",
+    title: "Writer | Axion Science",
+    description: "Scientific writing and publication workspace connected to Axion Science projects and evidence.",
 };
 
 export default function RootLayout({
@@ -27,7 +28,8 @@ export default function RootLayout({
     return (
         <html lang="uz" suppressHydrationWarning>
             <body className={`${manrope.variable} ${playfair.variable} min-h-screen`}>
-                <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+                <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+                    <EcosystemBar currentApp="writer" />
                     {children}
                 </ThemeProvider>
             </body>
