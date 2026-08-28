@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { WriterWorkspace } from "@/components/writer/workspace/writer-workspace";
-import type { WriterDocument } from "@/lib/writer-document";
+import { normalizeWriterDocument, type WriterDocument } from "@/lib/writer-document";
 import { readQueuedWriterImport, removeQueuedWriterImport, serializeWriterBridgeBlock } from "@/lib/live-writer-bridge";
 import { createWriterPaper } from "@/lib/writer-api";
 import { compileWriterProjectSections } from "@/lib/writer-project";
@@ -28,7 +28,9 @@ function NewPaperPageContent() {
     const selectedTemplate = getWriterTemplate(templateId || selectedPreset?.templateId) ?? getDefaultWriterTemplate();
     const resolvedAddOnIds = addOnIds.length ? addOnIds : selectedPreset?.addOnIds ?? [];
 
-    const [formData, setFormData] = useState<WriterDocument>(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds));
+    const [formData, setFormData] = useState<WriterDocument>(() =>
+        normalizeWriterDocument(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds)),
+    );
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
