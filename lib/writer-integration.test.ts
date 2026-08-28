@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { createEmptyWriterDocument } from "./writer-document";
 import {
     createPostMessageWriterHost,
     emitWriterHostEvent,
     isWriterHostCommand,
+    isWriterHostEvent,
     isWriterPostMessageEnvelope,
     type WriterHostAdapter,
 } from "./writer-integration";
@@ -54,12 +56,26 @@ describe("Writer host integration port", () => {
     });
 
     it("validates command-specific payloads", () => {
+        const validDocument = createEmptyWriterDocument();
         expect(isWriterHostCommand({ type: "insert-markdown", markdown: "## Result" })).toBe(true);
         expect(isWriterHostCommand({ type: "insert-markdown" })).toBe(false);
+        expect(isWriterHostCommand({ type: "replace-document", document: validDocument })).toBe(true);
+        expect(isWriterHostCommand({ type: "replace-document", document: {} })).toBe(false);
+        expect(isWriterHostCommand({ type: "patch-document", patch: { title: "New title" } })).toBe(true);
+        expect(isWriterHostCommand({ type: "patch-document", patch: { title: 17 } })).toBe(false);
+        expect(isWriterHostCommand({ type: "patch-document", patch: { unknown: true } })).toBe(false);
         expect(isWriterHostCommand({ type: "open-panel", panel: "tools" })).toBe(true);
         expect(isWriterHostCommand({ type: "open-panel", panel: "unknown" })).toBe(false);
         expect(isWriterHostCommand({ type: "set-view", view: "split" })).toBe(true);
         expect(isWriterHostCommand({ type: "set-view", view: "fullscreen" })).toBe(false);
+    });
+
+    it("validates event payloads instead of trusting writer-prefixed strings", () => {
+        const context = { hostId: "test-host", mode: "edit" as const, documentId: "42" };
+        expect(isWriterHostEvent({ type: "writer.ready", context })).toBe(true);
+        expect(isWriterHostEvent({ type: "writer.document.changed", context, document: createEmptyWriterDocument() })).toBe(true);
+        expect(isWriterHostEvent({ type: "writer.document.changed", context, document: {} })).toBe(false);
+        expect(isWriterHostEvent({ type: "writer.fake", context })).toBe(false);
     });
 
     it("validates postMessage envelopes", () => {
@@ -77,6 +93,14 @@ describe("Writer host integration port", () => {
                 channel: "writer",
                 kind: "command",
                 payload: { type: "insert-markdown" },
+            }),
+        ).toBe(false);
+        expect(
+            isWriterPostMessageEnvelope({
+                source: "mathsphere-writer",
+                channel: "writer",
+                kind: "event",
+                payload: { type: "writer.fake", context: { hostId: "x", mode: "new" } },
             }),
         ).toBe(false);
     });
