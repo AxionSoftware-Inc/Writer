@@ -3,10 +3,8 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import {
-    PaperEditorWorkspace,
-    type PaperFormData,
-} from "@/components/paper-editor-workspace";
+import { WriterWorkspace } from "@/components/writer/workspace/writer-workspace";
+import type { WriterDocument } from "@/lib/writer-document";
 import { readQueuedWriterImport, removeQueuedWriterImport, serializeWriterBridgeBlock } from "@/lib/live-writer-bridge";
 import { createWriterPaper } from "@/lib/writer-api";
 import { compileWriterProjectSections } from "@/lib/writer-project";
@@ -30,11 +28,11 @@ function NewPaperPageContent() {
     const selectedTemplate = getWriterTemplate(templateId || selectedPreset?.templateId) ?? getDefaultWriterTemplate();
     const resolvedAddOnIds = addOnIds.length ? addOnIds : selectedPreset?.addOnIds ?? [];
 
-    const [formData, setFormData] = useState<PaperFormData>(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds));
+    const [formData, setFormData] = useState<WriterDocument>(createDraftFromTemplate(selectedTemplate, resolvedAddOnIds));
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
-    const handleFormChange = useCallback((next: PaperFormData) => {
+    const handleFormChange = useCallback((next: WriterDocument) => {
         setFormData(reconcileWriterTemplateApplication(next));
     }, []);
 
@@ -57,10 +55,7 @@ function NewPaperPageContent() {
                 const nextSections = current.sections.length
                     ? current.sections.map((section, index) =>
                           index === 0
-                              ? {
-                                    ...section,
-                                    content: `${importedSections.join("\n\n")}\n\n---\n\n${section.content}`,
-                                }
+                              ? { ...section, content: `${importedSections.join("\n\n")}\n\n---\n\n${section.content}` }
                               : section,
                       )
                     : current.sections;
@@ -88,10 +83,9 @@ function NewPaperPageContent() {
         return () => window.clearTimeout(timer);
     }, [importId, source]);
 
-    async function handleSubmit(nextData?: PaperFormData) {
+    async function handleSubmit(nextData?: WriterDocument) {
         setStatus("submitting");
         setErrorMessage("");
-
         try {
             const payload = reconcileWriterTemplateApplication(nextData ?? formData);
             const created = await createWriterPaper(payload);
@@ -106,7 +100,7 @@ function NewPaperPageContent() {
 
     return (
         <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden">
-            <PaperEditorWorkspace
+            <WriterWorkspace
                 formData={formData}
                 onChange={handleFormChange}
                 onSubmit={handleSubmit}
