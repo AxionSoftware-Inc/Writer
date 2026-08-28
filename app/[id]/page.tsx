@@ -5,25 +5,10 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { useParams } from "next/navigation";
 
-import {
-    PaperEditorWorkspace,
-    type PaperFormData,
-} from "@/components/paper-editor-workspace";
+import { WriterWorkspace } from "@/components/writer/workspace/writer-workspace";
+import { createEmptyWriterDocument, type WriterDocument } from "@/lib/writer-document";
 import { fetchWriterPaper, updateWriterPaper } from "@/lib/writer-api";
 import { reconcileWriterTemplateApplication } from "@/lib/writer-template-application";
-
-const EMPTY_FORM: PaperFormData = {
-    title: "",
-    abstract: "",
-    content: "",
-    authors: "",
-    keywords: "",
-    document_kind: "paper",
-    branding_enabled: true,
-    branding_label: "Powered by MathSphere Writer",
-    status: "draft",
-    sections: [],
-};
 
 export default function EditPaperPage() {
     const params = useParams();
@@ -31,18 +16,17 @@ export default function EditPaperPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
-    const [formData, setFormData] = useState<PaperFormData>(EMPTY_FORM);
+    const [formData, setFormData] = useState<WriterDocument>(() => createEmptyWriterDocument());
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
-    const handleFormChange = useCallback((next: PaperFormData) => {
+    const handleFormChange = useCallback((next: WriterDocument) => {
         setFormData(reconcileWriterTemplateApplication(next));
     }, []);
 
     const loadPaper = useCallback(async () => {
         setIsLoading(true);
         setLoadError("");
-
         try {
             const data = await fetchWriterPaper(id);
             setFormData({
@@ -69,16 +53,13 @@ export default function EditPaperPage() {
         void loadPaper();
     }, [loadPaper]);
 
-    async function handleSubmit(nextData?: PaperFormData) {
+    async function handleSubmit(nextData?: WriterDocument) {
         setStatus("submitting");
         setErrorMessage("");
-
         try {
             const payload = reconcileWriterTemplateApplication(nextData ?? formData);
             const saved = await updateWriterPaper(id, payload);
-
-            setFormData((current) => ({
-                ...current,
+            setFormData({
                 ...payload,
                 title: saved.title ?? payload.title,
                 abstract: saved.abstract ?? payload.abstract,
@@ -90,12 +71,9 @@ export default function EditPaperPage() {
                 branding_label: saved.branding_label ?? payload.branding_label,
                 status: saved.status ?? payload.status,
                 sections: Array.isArray(saved.sections) ? saved.sections : payload.sections,
-            }));
+            });
             setStatus("success");
-
-            window.setTimeout(() => {
-                setStatus((current) => (current === "success" ? "idle" : current));
-            }, 1400);
+            window.setTimeout(() => setStatus((current) => (current === "success" ? "idle" : current)), 1400);
         } catch (error) {
             console.error("Writer document save failed:", error);
             setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog‘lanishda muammo.");
@@ -120,20 +98,11 @@ export default function EditPaperPage() {
                     <h1 className="mt-2 text-xl font-black tracking-tight">Hujjatni ochib bo‘lmadi</h1>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{loadError}</p>
                     <div className="mt-5 flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            onClick={() => void loadPaper()}
-                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-foreground px-4 text-xs font-bold text-background"
-                        >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                            Qayta urinish
+                        <button type="button" onClick={() => void loadPaper()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-foreground px-4 text-xs font-bold text-background">
+                            <RefreshCw className="h-3.5 w-3.5" /> Qayta urinish
                         </button>
-                        <Link
-                            href="/"
-                            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/60 px-4 text-xs font-bold text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-                        >
-                            <ArrowLeft className="h-3.5 w-3.5" />
-                            Arxivga qaytish
+                        <Link href="/" className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/60 px-4 text-xs font-bold text-muted-foreground hover:bg-muted/30 hover:text-foreground">
+                            <ArrowLeft className="h-3.5 w-3.5" /> Arxivga qaytish
                         </Link>
                     </div>
                 </div>
@@ -143,7 +112,7 @@ export default function EditPaperPage() {
 
     return (
         <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden">
-            <PaperEditorWorkspace
+            <WriterWorkspace
                 formData={formData}
                 onChange={handleFormChange}
                 onSubmit={handleSubmit}
