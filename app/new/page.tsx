@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { WriterWorkspace } from "@/components/writer/workspace/writer-workspace";
+import { WriterWorkspace } from "@/components/writer";
 import { normalizeWriterDocument, type WriterDocument } from "@/lib/writer-document";
 import { readQueuedWriterImport, removeQueuedWriterImport, serializeWriterBridgeBlock } from "@/lib/live-writer-bridge";
 import { createWriterPaper } from "@/lib/writer-api";
