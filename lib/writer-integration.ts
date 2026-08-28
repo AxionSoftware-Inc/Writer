@@ -54,15 +54,7 @@ export const defaultWriterHost: WriterHostAdapter = {
     },
 };
 
-/**
- * Browser bridge for products that embed Writer without sharing React state.
- *
- * Host -> Writer commands:
- *   window.dispatchEvent(new CustomEvent(`${channel}:command`, { detail: command }))
- *
- * Writer -> Host events:
- *   window.addEventListener(`${channel}:event`, listener)
- */
+/** Same-window bridge for hosts that do not share React state with Writer. */
 export function createWindowWriterHost(
     channel = "mathsphere-writer",
     options: { id?: string; capabilities?: WriterHostCapabilities } = {},
@@ -78,12 +70,116 @@ export function createWindowWriterHost(
             if (typeof window === "undefined") return () => undefined;
             const handler = (event: Event) => {
                 const detail = (event as CustomEvent<WriterHostCommand>).detail;
-                if (detail && typeof detail === "object" && "type" in detail) listener(detail);
+                if (isWriterHostCommand(detail)) listener(detail);
             };
             window.addEventListener(`${channel}:command`, handler);
             return () => window.removeEventListener(`${channel}:command`, handler);
         },
     };
+}
+
+export type WriterPostMessageEnvelope =
+    | {
+          source: "mathsphere-writer";
+          channel: string;
+          kind: "command";
+          payload: WriterHostCommand;
+      }
+    | {
+          source: "mathsphere-writer";
+          channel: string;
+          kind: "event";
+          payload: WriterHostEvent;
+      };
+
+export type WriterPostMessageHostOptions = {
+    /** Exact target origin. Intentionally required; `*` is rejected. */
+    targetOrigin: string;
+    /** Origin allowed to send commands to this Writer instance. Defaults to targetOrigin. */
+    allowedOrigin?: string;
+    channel?: string;
+    id?: string;
+    capabilities?: WriterHostCapabilities;
+    /** Parent, opener, iframe contentWindow or a desktop WebView bridge window. */
+    getTargetWindow?: () => Window | null;
+    /** Optional source-window check in addition to the origin check. */
+    getAllowedSource?: () => MessageEventSource | null;
+};
+
+/**
+ * Cross-window bridge for iframe, microfrontend and WebView embedding.
+ * The adapter refuses wildcard target origins and validates incoming origin,
+ * channel, envelope kind and (optionally) source window before accepting commands.
+ */
+export function createPostMessageWriterHost(options: WriterPostMessageHostOptions): WriterHostAdapter {
+    const channel = options.channel || "mathsphere-writer";
+    const allowedOrigin = options.allowedOrigin || options.targetOrigin;
+
+    if (!options.targetOrigin || options.targetOrigin === "*") {
+        throw new Error("Writer postMessage integration requires an explicit targetOrigin.");
+    }
+
+    const getTargetWindow = options.getTargetWindow ?? (() => {
+        if (typeof window === "undefined") return null;
+        if (window.parent && window.parent !== window) return window.parent;
+        return window.opener ?? null;
+    });
+
+    return {
+        id: options.id || `${channel}-post-message`,
+        capabilities: options.capabilities,
+        emit(event) {
+            if (typeof window === "undefined") return;
+            const target = getTargetWindow();
+            if (!target) return;
+            const envelope: WriterPostMessageEnvelope = {
+                source: "mathsphere-writer",
+                channel,
+                kind: "event",
+                payload: event,
+            };
+            target.postMessage(envelope, options.targetOrigin);
+        },
+        subscribe(listener) {
+            if (typeof window === "undefined") return () => undefined;
+            const handler = (event: MessageEvent<unknown>) => {
+                if (event.origin !== allowedOrigin) return;
+                const allowedSource = options.getAllowedSource?.();
+                if (allowedSource && event.source !== allowedSource) return;
+                if (!isWriterPostMessageEnvelope(event.data)) return;
+                if (event.data.channel !== channel || event.data.kind !== "command") return;
+                if (isWriterHostCommand(event.data.payload)) listener(event.data.payload);
+            };
+            window.addEventListener("message", handler);
+            return () => window.removeEventListener("message", handler);
+        },
+    };
+}
+
+export function isWriterHostCommand(value: unknown): value is WriterHostCommand {
+    if (!value || typeof value !== "object" || !("type" in value)) return false;
+    const type = (value as { type?: unknown }).type;
+    return typeof type === "string" && [
+        "insert-markdown",
+        "replace-document",
+        "patch-document",
+        "open-panel",
+        "set-view",
+        "refresh-preview",
+        "request-save",
+        "focus-editor",
+    ].includes(type);
+}
+
+export function isWriterPostMessageEnvelope(value: unknown): value is WriterPostMessageEnvelope {
+    if (!value || typeof value !== "object") return false;
+    const envelope = value as Partial<WriterPostMessageEnvelope>;
+    return (
+        envelope.source === "mathsphere-writer" &&
+        typeof envelope.channel === "string" &&
+        (envelope.kind === "command" || envelope.kind === "event") &&
+        Boolean(envelope.payload)
+    );
 }
 
 export async function emitWriterHostEvent(host: WriterHostAdapter | undefined, event: WriterHostEvent) {
