@@ -36,4 +36,17 @@ describe("Writer frontend architecture boundaries", () => {
         expect(source).not.toContain("useEffect(");
         expect(source).toContain("WriterWorkspace as PaperEditorWorkspace");
     });
+
+    it("keeps Pyodide execution out of the React/main-thread cell component", () => {
+        const cellSource = readProjectFile("components/jupyter-cell.tsx");
+        const runtimeSource = readProjectFile("lib/writer-python-runtime.ts");
+        const workerSource = readProjectFile("public/writer-pyodide-worker.js");
+
+        expect(cellSource).toContain("executeWriterPython");
+        expect(cellSource).not.toContain("loadPyodide");
+        expect(cellSource).not.toContain("document.createElement(\"script\")");
+        expect(runtimeSource).toContain('new Worker("/writer-pyodide-worker.js")');
+        expect(workerSource).toContain("loadPyodide");
+        expect(workerSource).toContain("executionQueue");
+    });
 });
