@@ -21,7 +21,12 @@ export type WriterDocument = {
     sections: WriterProjectSection[];
 };
 
-export type WriterDocumentPatch = Partial<WriterDocument>;
+export type WriterDocumentPatch = Partial<
+    Pick<
+        WriterDocument,
+        "title" | "abstract" | "authors" | "keywords" | "document_kind" | "branding_enabled" | "branding_label" | "status"
+    >
+>;
 export type WriterSaveState = "idle" | "submitting" | "success" | "error";
 export type WriterViewMode = "split" | "edit" | "preview";
 export type WriterPreviewSyncMode = "live" | "manual";
@@ -53,6 +58,16 @@ const writerDocumentKeys = new Set<keyof WriterDocument>([
     "status",
     "sections",
 ]);
+const writerDocumentPatchKeys = new Set<keyof WriterDocumentPatch>([
+    "title",
+    "abstract",
+    "authors",
+    "keywords",
+    "document_kind",
+    "branding_enabled",
+    "branding_label",
+    "status",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -73,8 +88,9 @@ function normalizeSection(value: unknown, index: number): WriterProjectSection |
             : "todo";
     const order = typeof value.order === "number" && Number.isFinite(value.order) ? value.order : index + 1;
     const content = typeof value.content === "string" ? value.content : "";
+    const normalized = { title, slug, kind, progress_state: progressState, order, content } satisfies WriterProjectSection;
 
-    return { id, title, slug, kind, progress_state: progressState, order, content };
+    return id === undefined ? normalized : { ...normalized, id };
 }
 
 export function isWriterProjectSection(value: unknown): value is WriterProjectSection {
@@ -113,18 +129,15 @@ export function isWriterDocument(value: unknown): value is WriterDocument {
 
 export function isWriterDocumentPatch(value: unknown): value is WriterDocumentPatch {
     if (!isRecord(value)) return false;
-    if (Object.keys(value).some((key) => !writerDocumentKeys.has(key as keyof WriterDocument))) return false;
-    if (value.schemaVersion !== undefined && value.schemaVersion !== WRITER_DOCUMENT_SCHEMA_VERSION) return false;
+    if (Object.keys(value).some((key) => !writerDocumentPatchKeys.has(key as keyof WriterDocumentPatch))) return false;
     if (value.title !== undefined && typeof value.title !== "string") return false;
     if (value.abstract !== undefined && typeof value.abstract !== "string") return false;
-    if (value.content !== undefined && typeof value.content !== "string") return false;
     if (value.authors !== undefined && typeof value.authors !== "string") return false;
     if (value.keywords !== undefined && typeof value.keywords !== "string") return false;
     if (value.document_kind !== undefined && typeof value.document_kind !== "string") return false;
     if (value.branding_enabled !== undefined && typeof value.branding_enabled !== "boolean") return false;
     if (value.branding_label !== undefined && typeof value.branding_label !== "string") return false;
     if (value.status !== undefined && typeof value.status !== "string") return false;
-    if (value.sections !== undefined && (!Array.isArray(value.sections) || !value.sections.every(isWriterProjectSection))) return false;
     return true;
 }
 
