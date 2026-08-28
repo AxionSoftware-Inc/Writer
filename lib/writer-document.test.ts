@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    WRITER_DOCUMENT_SCHEMA_VERSION,
     analyzeWriterDocumentContent,
     buildLegacyWriterSnapshotStorageKey,
     buildWriterSnapshotStorageKey,
     createEmptyWriterDocument,
+    isWriterDocument,
+    isWriterDocumentPatch,
+    normalizeWriterDocument,
     splitWriterCommaValues,
 } from "./writer-document";
+import { createWriterProjectSection } from "./writer-project";
 
 describe("Writer document core", () => {
     it("analyzes structural content without React", () => {
@@ -33,11 +38,33 @@ describe("Writer document core", () => {
         );
     });
 
-    it("creates a complete empty document contract", () => {
+    it("creates a versioned empty document contract", () => {
         const document = createEmptyWriterDocument();
+        expect(document.schemaVersion).toBe(WRITER_DOCUMENT_SCHEMA_VERSION);
         expect(document.document_kind).toBe("paper");
         expect(document.branding_enabled).toBe(true);
         expect(document.sections).toEqual([]);
+        expect(isWriterDocument(document)).toBe(true);
+    });
+
+    it("upgrades legacy server-shaped documents into the current schema", () => {
+        const section = createWriterProjectSection({ title: "Main", content: "Body" });
+        const document = normalizeWriterDocument({
+            title: "Legacy",
+            content: "Body",
+            sections: [section],
+        });
+        expect(document.schemaVersion).toBe(WRITER_DOCUMENT_SCHEMA_VERSION);
+        expect(document.title).toBe("Legacy");
+        expect(document.sections).toHaveLength(1);
+        expect(isWriterDocument(document)).toBe(true);
+    });
+
+    it("rejects unknown or malformed document patches", () => {
+        expect(isWriterDocumentPatch({ title: "Updated" })).toBe(true);
+        expect(isWriterDocumentPatch({ branding_enabled: false })).toBe(true);
+        expect(isWriterDocumentPatch({ branding_enabled: "no" })).toBe(false);
+        expect(isWriterDocumentPatch({ arbitraryField: true })).toBe(false);
     });
 
     it("normalizes comma metadata", () => {
