@@ -97,6 +97,10 @@ function looksLikeHtml(content: string) {
     return /<\/?[a-z][\s\S]*>/i.test(content);
 }
 
+function isSafeRelativeUrl(normalized: string) {
+    return normalized.startsWith("/") && !normalized.startsWith("//");
+}
+
 function isSafeHref(value: string) {
     const normalized = value.trim().toLowerCase();
     return (
@@ -105,7 +109,7 @@ function isSafeHref(value: string) {
         normalized.startsWith("mailto:") ||
         normalized.startsWith("tel:") ||
         normalized.startsWith("#") ||
-        normalized.startsWith("/")
+        isSafeRelativeUrl(normalized)
     );
 }
 
@@ -114,7 +118,7 @@ function isSafeImageSrc(value: string) {
     return (
         normalized.startsWith("http://") ||
         normalized.startsWith("https://") ||
-        normalized.startsWith("/") ||
+        isSafeRelativeUrl(normalized) ||
         /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,/i.test(value.trim())
     );
 }
