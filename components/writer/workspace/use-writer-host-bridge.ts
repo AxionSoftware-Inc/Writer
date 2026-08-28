@@ -22,6 +22,16 @@ export function useWriterHostBridge(
     handlers: WriterHostBridgeHandlers,
 ) {
     const readyKeyRef = useRef<string | null>(null);
+    const {
+        insertMarkdown,
+        replaceDocument,
+        patchDocument,
+        openPanel,
+        setView,
+        refreshPreview,
+        requestSave,
+        focusEditor,
+    } = handlers;
 
     useEffect(() => {
         const readyKey = `${host.id}:${context.mode}:${context.documentId ?? ""}`;
@@ -35,30 +45,30 @@ export function useWriterHostBridge(
         return host.subscribe((command) => {
             switch (command.type) {
                 case "insert-markdown":
-                    handlers.insertMarkdown(command.markdown);
+                    insertMarkdown(command.markdown);
                     break;
                 case "replace-document":
-                    handlers.replaceDocument(command.document);
+                    replaceDocument(command.document);
                     break;
                 case "patch-document":
-                    handlers.patchDocument(command.patch);
+                    patchDocument(command.patch);
                     break;
                 case "open-panel":
-                    handlers.openPanel(command.panel);
+                    openPanel(command.panel);
                     break;
                 case "set-view":
-                    handlers.setView(command.view);
+                    setView(command.view);
                     break;
                 case "refresh-preview":
-                    handlers.refreshPreview();
+                    refreshPreview();
                     break;
                 case "request-save":
-                    void handlers.requestSave();
+                    void requestSave();
                     break;
                 case "focus-editor":
-                    handlers.focusEditor();
+                    focusEditor();
                     break;
             }
         });
-    }, [handlers, host]);
+    }, [focusEditor, host, insertMarkdown, openPanel, patchDocument, refreshPreview, replaceDocument, requestSave, setView]);
 }
