@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { useParams } from "next/navigation";
 
-import { WriterWorkspace } from "@/components/writer/workspace/writer-workspace";
+import { WriterWorkspace } from "@/components/writer";
 import { createEmptyWriterDocument, normalizeWriterDocument, type WriterDocument } from "@/lib/writer-document";
 import { fetchWriterPaper, updateWriterPaper } from "@/lib/writer-api";
 import { reconcileWriterTemplateApplication } from "@/lib/writer-template-application";
