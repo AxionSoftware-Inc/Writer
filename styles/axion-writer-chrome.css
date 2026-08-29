@@ -1,0 +1,133 @@
+/* Axion Science global component language overrides for Writer chrome.
+ * Keep manuscript/publication rendering independent from this layer.
+ */
+
+body {
+  background: var(--ax-canvas);
+  color: var(--ax-text);
+}
+
+.site-workspace-shell {
+  background: var(--ax-canvas);
+}
+
+.site-workspace-topbar {
+  border-color: var(--ax-line);
+  background: color-mix(in srgb, var(--ax-surface) 96%, transparent);
+  box-shadow: none;
+  backdrop-filter: blur(14px);
+}
+
+.site-toolbar-shell {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-panel);
+  background: var(--ax-surface);
+  box-shadow: var(--ax-shadow-subtle);
+}
+
+.site-toolbar-segment {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-control);
+  background: var(--ax-surface-soft);
+}
+
+.site-toolbar-pill {
+  min-height: 34px;
+  border-color: transparent;
+  border-radius: var(--ax-radius-control);
+  background: transparent;
+  color: var(--ax-text-soft);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+  transition:
+    background-color var(--ax-motion-fast) var(--ax-ease-standard),
+    border-color var(--ax-motion-fast) var(--ax-ease-standard),
+    color var(--ax-motion-fast) var(--ax-ease-standard);
+}
+
+.site-toolbar-pill:hover {
+  border-color: var(--ax-line);
+  background: var(--ax-surface);
+  color: var(--ax-text);
+}
+
+.site-toolbar-pill-active {
+  border-color: var(--ax-line-strong);
+  background: var(--ax-surface);
+  color: var(--ax-text);
+  box-shadow: 0 1px 2px rgb(23 36 54 / 0.06);
+}
+
+.site-status-pill {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-control);
+  background: var(--ax-surface-soft);
+  color: var(--ax-text-soft);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.site-soft-panel,
+.site-panel,
+.site-panel-strong,
+.glass-panel {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-panel);
+  background: var(--ax-surface);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.site-panel-strong {
+  box-shadow: var(--ax-shadow-subtle);
+}
+
+.site-outline-card {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-panel);
+  background: var(--ax-surface);
+}
+
+.site-outline-card:hover {
+  border-color: var(--ax-line-strong);
+  background: var(--ax-surface-soft);
+}
+
+.site-document-frame {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-floating);
+  background: var(--ax-surface);
+  box-shadow: var(--ax-shadow-subtle);
+}
+
+.site-document-chip {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-control);
+  background: var(--ax-surface-soft);
+}
+
+.site-code-surface {
+  border-color: var(--ax-line-strong);
+  border-radius: var(--ax-radius-panel);
+}
+
+.site-lab-card {
+  border-color: var(--ax-line);
+  border-radius: var(--ax-radius-panel);
+  background: var(--ax-surface);
+  box-shadow: none;
+}
+
+.glow-effect::after,
+.hero-glow {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-toolbar-pill {
+    transition: none;
+  }
+}
