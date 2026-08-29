@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
-import {
-    PaperEditorWorkspace,
-    type PaperFormData,
-} from "@/components/paper-editor-workspace";
+import { PaperEditorWorkspace, type PaperFormData } from "@/components/paper-editor-workspace";
 import { fetchWriterPaper, updateWriterPaper } from "@/lib/writer-api";
 
 export default function EditPaperPage() {
@@ -49,26 +46,21 @@ export default function EditPaperPage() {
                 });
             } catch (error) {
                 console.error("Xatolik:", error);
-                router.push("/");
+                router.push("/documents");
             } finally {
                 setIsLoading(false);
             }
         }
-
         fetchPaper();
     }, [id, router]);
 
     async function handleSubmit(nextData?: PaperFormData) {
         setStatus("submitting");
         setErrorMessage("");
-
         try {
-            const payload = nextData ?? formData;
-            await updateWriterPaper(id, payload);
+            await updateWriterPaper(id, nextData ?? formData);
             setStatus("success");
-            setTimeout(() => {
-                router.push("/");
-            }, 900);
+            setTimeout(() => router.push("/documents"), 900);
         } catch (error) {
             console.error("Submission error:", error);
             setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
@@ -78,24 +70,16 @@ export default function EditPaperPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-dvh min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-background text-muted-foreground">
-                <Loader2 className="mb-4 h-8 w-8 animate-spin" />
-                <p>Muhit tayyorlanmoqda...</p>
+            <div className="flex h-[calc(100dvh-32px)] min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-[var(--ax-canvas)] text-[var(--ax-text-soft)]">
+                <Loader2 className="mb-4 h-6 w-6 animate-spin text-[var(--ax-accent)]" />
+                <p className="text-sm">Preparing Writer…</p>
             </div>
         );
     }
 
     return (
-        <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden">
-            <PaperEditorWorkspace
-                formData={formData}
-                onChange={setFormData}
-                onSubmit={handleSubmit}
-                saveState={status}
-                errorMessage={errorMessage}
-                mode="edit"
-                documentId={id}
-            />
+        <div className="flex h-[calc(100dvh-32px)] min-h-0 w-full flex-col overflow-hidden">
+            <PaperEditorWorkspace formData={formData} onChange={setFormData} onSubmit={handleSubmit} saveState={status} errorMessage={errorMessage} mode="edit" documentId={id} />
         </div>
     );
 }
