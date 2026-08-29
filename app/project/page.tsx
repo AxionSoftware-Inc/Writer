@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { AxActionLink, AxBadge, AxEmptyState, AxSectionHeader } from "@/components/axion";
+import { AxActionLink, AxBadge, AxEmptyState, AxLoadingState, AxSectionHeader } from "@/components/axion";
 import { getEcosystemHref } from "@/lib/ecosystem/apps";
 import { listLocalScientificObjects } from "@/lib/ecosystem/local-object-store";
 import { getLocalProjectTitle, resolveActiveProjectId } from "@/lib/ecosystem/project-context";
@@ -45,7 +45,7 @@ export default function WriterProjectResultsPage() {
                 {!projectId ? (
                     <AxEmptyState title="No active Project." description="Open Writer from the Science Hub so the document can keep the same research context." />
                 ) : loading ? (
-                    <div className="py-12 text-sm text-[var(--ax-text-soft)]">Loading local results…</div>
+                    <AxLoadingState label="Loading Project results" detail="Reading saved scientific objects from this device." />
                 ) : objects.length ? (
                     <div className="divide-y divide-[var(--ax-line)]">
                         {objects.map((object) => (
