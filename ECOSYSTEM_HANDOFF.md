@@ -1,7 +1,7 @@
 # Ecosystem Handoff — Writer
 
-Branch: `ecosystem-v1-foundation-2026-08-28`
-Base: `main` at `77af4009540250f726a7c2a06dca4be2a095090b`
+Active development branch: `main`
+Pre-ecosystem baseline: `freeze/pre-ecosystem-main-2026-08-29`
 
 ## Role
 
