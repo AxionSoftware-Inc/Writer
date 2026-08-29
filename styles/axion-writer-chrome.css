@@ -2,9 +2,30 @@
  * Keep manuscript/publication rendering independent from this layer.
  */
 
+:root {
+  --background: var(--ax-canvas);
+  --foreground: var(--ax-text);
+  --muted: var(--ax-surface-soft);
+  --muted-foreground: var(--ax-text-soft);
+  --border: var(--ax-line);
+  --surface: var(--ax-surface);
+  --surface-strong: var(--ax-surface);
+  --accent: var(--ax-accent);
+  --accent-soft: var(--ax-accent-soft);
+  --accent-alt: var(--ax-accent-strong);
+
+  --btn-radius: var(--ax-radius-control);
+  --radius-small: 7px;
+  --radius-medium: var(--ax-radius-control);
+  --radius-card: var(--ax-radius-panel);
+  --radius-panel: var(--ax-radius-panel);
+  --radius-panel-strong: var(--ax-radius-floating);
+}
+
 body {
   background: var(--ax-canvas);
   color: var(--ax-text);
+  font-family: var(--ax-font-ui);
 }
 
 .site-workspace-shell {
