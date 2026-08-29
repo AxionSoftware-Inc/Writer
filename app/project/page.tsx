@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 
+import { AxActionLink, AxBadge, AxEmptyState, AxSectionHeader } from "@/components/axion";
 import { getEcosystemHref } from "@/lib/ecosystem/apps";
 import { listLocalScientificObjects } from "@/lib/ecosystem/local-object-store";
 import { getLocalProjectTitle, resolveActiveProjectId } from "@/lib/ecosystem/project-context";
@@ -29,49 +29,46 @@ export default function WriterProjectResultsPage() {
     }, []);
 
     return (
-        <main className="min-h-[calc(100vh-36px)] bg-[#fbfcfe] px-4 py-10 text-[#171a20] sm:px-6">
+        <main className="min-h-[calc(100vh-36px)] bg-[var(--ax-canvas)] px-4 py-10 text-[var(--ax-text)] sm:px-6">
             <div className="mx-auto max-w-5xl">
-                <Link href={projectId ? `/?project=${encodeURIComponent(projectId)}` : "/"} className="text-xs font-semibold text-[#66707c] hover:text-[#171a20]">← Writer</Link>
-                <div className="mt-6 border-b border-[#e2e6ec] pb-7">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#184eb8]">Project results</div>
-                    <h1 className="mt-2 font-serif text-4xl tracking-[-0.035em]">{projectTitle || "Active project"}</h1>
-                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#66707c]">Choose a saved result and start a Writer draft from it. The result is read directly from this Project on the device.</p>
-                </div>
+                <AxActionLink href={projectId ? `/?project=${encodeURIComponent(projectId)}` : "/"} variant="quiet" size="sm" className="px-0">
+                    ← Writer
+                </AxActionLink>
+
+                <AxSectionHeader
+                    className="mt-6 border-b border-[var(--ax-line)] pb-7"
+                    eyebrow="Project results"
+                    title={projectTitle || "Active project"}
+                    description="Choose a saved result and start a Writer draft from it. The result is read directly from this Project on the device."
+                />
 
                 {!projectId ? (
-                    <div className="py-12 text-sm text-[#66707c]">No active Project. Open Writer from the Science Hub first.</div>
+                    <AxEmptyState title="No active Project." description="Open Writer from the Science Hub so the document can keep the same research context." />
                 ) : loading ? (
-                    <div className="py-12 text-sm text-[#66707c]">Loading local results…</div>
+                    <div className="py-12 text-sm text-[var(--ax-text-soft)]">Loading local results…</div>
                 ) : objects.length ? (
-                    <div className="divide-y divide-[#e6e9ee]">
+                    <div className="divide-y divide-[var(--ax-line)]">
                         {objects.map((object) => (
                             <article key={object.id} className="grid gap-4 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                                 <div className="min-w-0">
-                                    <h2 className="truncate text-base font-semibold">{object.title}</h2>
-                                    <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#8a929d]">{object.domain || object.kind} · saved result</div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h2 className="truncate text-base font-semibold text-[var(--ax-text)]">{object.title}</h2>
+                                        <AxBadge>Saved result</AxBadge>
+                                    </div>
+                                    <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--ax-text-faint)]">{object.domain || object.kind}</div>
                                 </div>
-                                <Link
-                                    href={`/new?source=project&project=${encodeURIComponent(projectId)}&objectId=${encodeURIComponent(object.id)}`}
-                                    className="inline-flex h-10 items-center justify-center rounded-[9px] bg-[#0b1f46] px-4 text-xs font-semibold text-white"
-                                >
+                                <AxActionLink href={`/new?source=project&project=${encodeURIComponent(projectId)}&objectId=${encodeURIComponent(object.id)}`} variant="primary">
                                     New document
-                                </Link>
+                                </AxActionLink>
                             </article>
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-wrap items-center justify-between gap-4 py-12">
-                        <div>
-                            <div className="text-sm font-semibold">No saved Math results yet.</div>
-                            <p className="mt-2 text-sm text-[#66707c]">Solve something in Laboratory and press Save.</p>
-                        </div>
-                        <a
-                            href={getEcosystemHref("math", "writer", projectId)}
-                            className="inline-flex h-10 items-center justify-center rounded-[9px] border border-[#dfe4ea] bg-white px-4 text-xs font-semibold text-[#303640]"
-                        >
-                            Open Math
-                        </a>
-                    </div>
+                    <AxEmptyState
+                        title="No saved Math results yet."
+                        description="Solve something in Laboratory and press Save. The result will appear here without a server-side import step."
+                        action={<AxActionLink href={getEcosystemHref("math", "writer", projectId)}>Open Math</AxActionLink>}
+                    />
                 )}
             </div>
         </main>
