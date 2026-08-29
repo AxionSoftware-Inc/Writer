@@ -1,0 +1,63 @@
+:root {
+  --ax-canvas: #f7f9fc;
+  --ax-surface: #ffffff;
+  --ax-surface-soft: #f2f5f9;
+  --ax-surface-strong: #eaf0f7;
+  --ax-text: #101827;
+  --ax-text-soft: #5f6b7a;
+  --ax-text-faint: #8b95a3;
+  --ax-line: #e2e7ee;
+  --ax-line-strong: #cfd7e2;
+  --ax-accent: #163f73;
+  --ax-accent-strong: #0e2b52;
+  --ax-accent-soft: #edf3fa;
+  --ax-success: #1f7655;
+  --ax-warning: #a3691a;
+  --ax-danger: #ae4545;
+  --ax-focus-ring: 0 0 0 3px rgb(22 63 115 / 0.16);
+
+  --ax-radius-control: 9px;
+  --ax-radius-panel: 14px;
+  --ax-radius-floating: 18px;
+
+  --ax-shadow-floating: 0 18px 50px rgb(23 36 54 / 0.10);
+  --ax-shadow-subtle: 0 8px 24px rgb(23 36 54 / 0.06);
+
+  --ax-motion-fast: 120ms;
+  --ax-motion-standard: 190ms;
+  --ax-motion-slow: 320ms;
+  --ax-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --ax-content-max: 1720px;
+  --ax-reading-max: 820px;
+  --ax-instrument-panel: 360px;
+
+  --ax-font-ui: var(--font-inter, var(--font-body, ui-sans-serif)), ui-sans-serif, system-ui, sans-serif;
+  --ax-font-display: var(--font-display, var(--font-playfair, var(--ax-font-ui)));
+  --ax-font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, Menlo, monospace;
+}
+
+.dark {
+  --ax-canvas: #0b0e13;
+  --ax-surface: #10141a;
+  --ax-surface-soft: #151a22;
+  --ax-surface-strong: #1a212b;
+  --ax-text: #f3f6fa;
+  --ax-text-soft: #a9b2bf;
+  --ax-text-faint: #788291;
+  --ax-line: #252d38;
+  --ax-line-strong: #35404d;
+  --ax-accent: #8ab4e8;
+  --ax-accent-strong: #bdd6f4;
+  --ax-accent-soft: #142339;
+  --ax-shadow-floating: 0 22px 60px rgb(0 0 0 / 0.34);
+  --ax-shadow-subtle: 0 10px 30px rgb(0 0 0 / 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ax-motion-fast: 0ms;
+    --ax-motion-standard: 0ms;
+    --ax-motion-slow: 0ms;
+  }
+}
