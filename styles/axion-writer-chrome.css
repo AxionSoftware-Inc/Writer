@@ -1,5 +1,5 @@
-/* Axion Science global component language overrides for Writer chrome.
- * Keep manuscript/publication rendering independent from this layer.
+/* Mathematics-reference visual alignment for Axion Writer.
+ * Manuscript/publication rendering remains independent from this layer.
  */
 
 :root {
@@ -26,42 +26,159 @@ body {
   background: var(--ax-canvas);
   color: var(--ax-text);
   font-family: var(--ax-font-ui);
+  background-image: none !important;
+}
+
+.site-shell {
+  background: var(--ax-canvas);
+  color: var(--ax-text);
+}
+
+.site-shell::before,
+.glow-effect::after,
+.hero-glow {
+  display: none !important;
+}
+
+/* Writer archive/product header follows the Mathematics 64px instrument header. */
+.site-shell > .border-b:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-color: var(--ax-line) !important;
+  background: color-mix(in srgb, var(--ax-surface) 96%, transparent) !important;
+  backdrop-filter: blur(16px);
+}
+
+.site-shell > .border-b:first-child > div {
+  min-height: 64px;
+  max-width: var(--ax-content-max) !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+/* Turn the legacy M tile into the same restrained scientific mark family. */
+.site-shell > .border-b:first-child .h-9.w-9 {
+  position: relative;
+  border: 1px solid var(--ax-accent) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: transparent !important;
+  box-shadow: none !important;
+}
+
+.site-shell > .border-b:first-child .h-9.w-9::before,
+.site-shell > .border-b:first-child .h-9.w-9::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 64%, transparent);
+  border-radius: 999px;
+}
+
+.site-shell > .border-b:first-child .h-9.w-9::after {
+  inset: 4px 11px;
+}
+
+.site-shell > .border-b:first-child [class*="uppercase"] {
+  color: var(--ax-accent) !important;
+  letter-spacing: 0.14em !important;
+}
+
+.site-shell > .border-b:first-child input[type="text"] {
+  height: 40px !important;
+  border: 1px solid var(--ax-line-strong) !important;
+  border-radius: var(--ax-radius-control) !important;
+  background: var(--ax-surface) !important;
+  color: var(--ax-text) !important;
+  box-shadow: none !important;
+}
+
+.site-shell > .border-b:first-child input[type="text"]:focus {
+  border-color: var(--ax-accent) !important;
+  box-shadow: var(--ax-focus-ring) !important;
+}
+
+.site-button-primary,
+.site-button-secondary {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: var(--ax-radius-control) !important;
+  padding: 0 14px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+  transition:
+    background-color var(--ax-motion-fast) var(--ax-ease-standard),
+    border-color var(--ax-motion-fast) var(--ax-ease-standard),
+    color var(--ax-motion-fast) var(--ax-ease-standard);
+}
+
+.site-button-primary {
+  border: 1px solid transparent !important;
+  background: var(--ax-accent-strong) !important;
+  color: white !important;
+}
+
+.site-button-primary:hover {
+  background: var(--ax-accent) !important;
+}
+
+.site-button-secondary {
+  border: 1px solid var(--ax-line-strong) !important;
+  background: var(--ax-surface) !important;
+  color: var(--ax-text) !important;
+}
+
+.site-button-secondary:hover {
+  background: var(--ax-surface-soft) !important;
+}
+
+.site-button-primary:focus-visible,
+.site-button-secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--ax-focus-ring) !important;
 }
 
 .site-workspace-shell {
-  background: var(--ax-canvas);
+  background: var(--ax-canvas) !important;
 }
 
 .site-workspace-topbar {
-  border-color: var(--ax-line);
-  background: color-mix(in srgb, var(--ax-surface) 96%, transparent);
-  box-shadow: none;
-  backdrop-filter: blur(14px);
+  min-height: 64px;
+  border-color: var(--ax-line) !important;
+  background: color-mix(in srgb, var(--ax-surface) 96%, transparent) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(16px);
 }
 
 .site-toolbar-shell {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-panel);
-  background: var(--ax-surface);
-  box-shadow: var(--ax-shadow-subtle);
+  border-color: var(--ax-line) !important;
+  border-radius: var(--ax-radius-panel) !important;
+  background: var(--ax-surface) !important;
+  box-shadow: var(--ax-shadow-subtle) !important;
 }
 
 .site-toolbar-segment {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-control);
-  background: var(--ax-surface-soft);
+  border-color: var(--ax-line) !important;
+  border-radius: var(--ax-radius-control) !important;
+  background: var(--ax-surface-soft) !important;
 }
 
 .site-toolbar-pill {
   min-height: 34px;
-  border-color: transparent;
-  border-radius: var(--ax-radius-control);
-  background: transparent;
-  color: var(--ax-text-soft);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0;
-  text-transform: none;
+  border-color: transparent !important;
+  border-radius: var(--ax-radius-control) !important;
+  background: transparent !important;
+  color: var(--ax-text-soft) !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
   transition:
     background-color var(--ax-motion-fast) var(--ax-ease-standard),
     border-color var(--ax-motion-fast) var(--ax-ease-standard),
@@ -69,86 +186,143 @@ body {
 }
 
 .site-toolbar-pill:hover {
-  border-color: var(--ax-line);
-  background: var(--ax-surface);
-  color: var(--ax-text);
+  border-color: var(--ax-line) !important;
+  background: var(--ax-surface) !important;
+  color: var(--ax-text) !important;
 }
 
 .site-toolbar-pill-active {
-  border-color: var(--ax-line-strong);
-  background: var(--ax-surface);
-  color: var(--ax-text);
-  box-shadow: 0 1px 2px rgb(23 36 54 / 0.06);
+  border-color: var(--ax-line-strong) !important;
+  background: var(--ax-surface) !important;
+  color: var(--ax-text) !important;
+  box-shadow: 0 1px 2px rgb(23 36 54 / 0.06) !important;
 }
 
-.site-status-pill {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-control);
-  background: var(--ax-surface-soft);
-  color: var(--ax-text-soft);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0;
+.site-status-pill,
+.site-chip {
+  border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius-control) !important;
+  background: var(--ax-surface-soft) !important;
+  color: var(--ax-text-soft) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.site-chip-active {
+  border-color: var(--ax-line-strong) !important;
+  background: var(--ax-surface) !important;
+  color: var(--ax-text) !important;
+}
+
+.site-eyebrow {
+  color: var(--ax-accent) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.14em !important;
+}
+
+.site-display {
+  color: var(--ax-text);
+  font-family: var(--ax-font-display);
+  font-weight: 600 !important;
+  letter-spacing: -0.03em !important;
 }
 
 .site-soft-panel,
 .site-panel,
 .site-panel-strong,
-.glass-panel {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-panel);
-  background: var(--ax-surface);
-  box-shadow: none;
-  backdrop-filter: none;
+.glass-panel,
+.site-metric-card {
+  border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius-panel) !important;
+  background: var(--ax-surface) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
-.site-panel-strong {
-  box-shadow: var(--ax-shadow-subtle);
+.site-panel-strong,
+.site-toolbar-shell {
+  box-shadow: var(--ax-shadow-subtle) !important;
 }
 
 .site-outline-card {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-panel);
-  background: var(--ax-surface);
+  border-color: var(--ax-line) !important;
+  border-radius: var(--ax-radius-control) !important;
+  background: var(--ax-surface) !important;
+  box-shadow: none !important;
 }
 
 .site-outline-card:hover {
-  border-color: var(--ax-line-strong);
-  background: var(--ax-surface-soft);
+  border-color: var(--ax-line-strong) !important;
+  background: var(--ax-surface-soft) !important;
+}
+
+/* Archive sidebar: remove oversized SaaS-card geometry. */
+.site-shell aside .site-panel-strong button {
+  border-radius: var(--ax-radius-control) !important;
+  padding: 12px !important;
+}
+
+.site-shell aside .site-panel-strong button > div > div:first-child {
+  border-radius: var(--ax-radius-control) !important;
+  background: var(--ax-accent-soft) !important;
+  color: var(--ax-accent) !important;
+}
+
+.site-shell aside .site-panel,
+.site-shell aside .site-panel-strong {
+  padding: 16px !important;
 }
 
 .site-document-frame {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-floating);
-  background: var(--ax-surface);
-  box-shadow: var(--ax-shadow-subtle);
+  border-color: var(--ax-line) !important;
+  border-radius: var(--ax-radius-panel) !important;
+  background: var(--ax-surface) !important;
+  box-shadow: var(--ax-shadow-subtle) !important;
 }
 
 .site-document-chip {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-control);
-  background: var(--ax-surface-soft);
+  border-color: var(--ax-line) !important;
+  border-radius: var(--ax-radius-control) !important;
+  background: var(--ax-surface-soft) !important;
 }
 
 .site-code-surface {
-  border-color: var(--ax-line-strong);
-  border-radius: var(--ax-radius-panel);
+  border-color: var(--ax-line-strong) !important;
+  border-radius: var(--ax-radius-panel) !important;
 }
 
 .site-lab-card {
-  border-color: var(--ax-line);
-  border-radius: var(--ax-radius-panel);
-  background: var(--ax-surface);
-  box-shadow: none;
+  border-color: var(--ax-line) !important;
+  border-radius: var(--ax-radius-panel) !important;
+  background: var(--ax-surface) !important;
+  box-shadow: none !important;
 }
 
-.glow-effect::after,
-.hero-glow {
-  display: none;
+/* Direct legacy rounded surfaces in the archive get the Laboratory radius. */
+.site-shell [class*="rounded-3xl"],
+.site-shell [class*="rounded-[1.35rem]"],
+.site-shell [class*="rounded-[1.75rem]"] {
+  border-radius: var(--ax-radius-panel) !important;
+}
+
+.site-shell [class*="rounded-full"]:not(.site-document-page *) {
+  border-radius: var(--ax-radius-control) !important;
+}
+
+/* Preserve the actual manuscript page as a publication surface. */
+.site-document-page {
+  border-radius: 0 !important;
+  background: white !important;
+  color: #111827 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-toolbar-pill {
-    transition: none;
+  .site-toolbar-pill,
+  .site-button-primary,
+  .site-button-secondary {
+    transition: none !important;
   }
 }
