@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FileText, Sigma } from "lucide-react";
 
+import { WriterHeroScene } from "@/components/home/writer-hero-scene";
+
 function WriterMark() {
     return (
         <svg viewBox="0 0 36 36" className="h-8 w-8 text-[var(--ax-accent)]" aria-hidden="true">
@@ -28,72 +30,28 @@ export default function WriterHomePage() {
                             <Link href="/project" className={navLink}>Project results</Link>
                             <Link href="/documents" className={navLink}>Documents</Link>
                         </div>
-                        <Link href="/documents" className="ml-1 inline-flex h-9 items-center rounded-[var(--ax-radius-control)] bg-[var(--ax-accent-strong)] px-4 text-[11px] font-semibold text-white outline-none transition-colors hover:bg-[var(--ax-accent)] focus-visible:shadow-[var(--ax-focus-ring)]">
-                            Open Writer
-                        </Link>
+                        <Link href="/documents" className="ml-1 inline-flex h-9 items-center rounded-[var(--ax-radius-control)] bg-[var(--ax-accent-strong)] px-4 text-[11px] font-semibold text-white outline-none transition-colors hover:bg-[var(--ax-accent)] focus-visible:shadow-[var(--ax-focus-ring)]">Open Writer</Link>
                     </nav>
                 </div>
             </header>
 
             <main>
-                <section className="mx-auto grid max-w-[1440px] items-center gap-10 px-6 pb-12 pt-12 sm:px-8 lg:grid-cols-[0.66fr_1.34fr] lg:gap-12 lg:px-10 lg:pb-10 lg:pt-10 xl:px-12">
-                    <div className="max-w-[500px] lg:pb-6">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ax-accent)]">Scientific writing · connected to evidence</p>
-                        <h1 className="mt-4 font-serif text-[clamp(3.35rem,5.4vw,5.9rem)] font-medium leading-[0.95] tracking-[-0.055em]">
+                <section className="relative mx-auto grid min-h-[600px] max-w-[1540px] items-center gap-4 overflow-hidden px-6 pb-6 pt-8 sm:px-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-0 lg:px-10 lg:pb-4 lg:pt-4 xl:px-12">
+                    <div className="relative z-10 max-w-[560px] py-8 lg:py-14">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--ax-accent)]">Axion Writer · scientific publishing</p>
+                        <h1 className="mt-4 font-serif text-[clamp(3.65rem,5.9vw,6.65rem)] font-medium leading-[0.92] tracking-[-0.058em]">
                             Research,
                             <br />
-                            ready to publish.
+                            ready to <span className="italic">publish.</span>
                         </h1>
-                        <div className="mt-6 h-[3px] w-14 bg-[var(--ax-accent)]" />
-                        <p className="mt-5 max-w-[440px] text-[17px] leading-7 text-[var(--ax-text-soft)] sm:text-[18px]">
-                            Write papers, reports and books while keeping equations, figures and scientific results connected to the Project they came from.
-                        </p>
-                        <div className="mt-7 flex flex-wrap items-center gap-3">
-                            <Link href="/documents" className="inline-flex h-11 items-center gap-2 rounded-[var(--ax-radius-control)] bg-[var(--ax-accent-strong)] px-5 text-sm font-semibold text-white shadow-[var(--ax-shadow-subtle)]">
-                                Open Writer <ArrowRight className="h-4 w-4" />
-                            </Link>
-                            <Link href="/project" className="inline-flex h-11 items-center rounded-[var(--ax-radius-control)] border border-[var(--ax-line-strong)] bg-[var(--ax-surface)] px-5 text-sm font-semibold text-[var(--ax-text)]">
-                                Use Project results
-                            </Link>
+                        <div className="mt-7 flex items-center gap-2" aria-hidden="true"><span className="h-[3px] w-16 rounded-full bg-[var(--ax-accent)]" /><span className="h-1.5 w-1.5 rounded-full bg-[#9b8cf0]" /></div>
+                        <p className="mt-6 max-w-[470px] text-[17px] leading-8 text-[var(--ax-text-soft)] sm:text-[18px]">Write papers, reports and books while keeping equations, figures and scientific results connected to the Project they came from.</p>
+                        <div className="mt-8 flex flex-wrap items-center gap-3">
+                            <Link href="/documents" className="inline-flex h-11 items-center gap-2 rounded-[var(--ax-radius-control)] bg-[var(--ax-accent-strong)] px-5 text-sm font-semibold text-white shadow-[var(--ax-shadow-subtle)] transition-colors hover:bg-[var(--ax-accent)]">Open Writer <ArrowRight className="h-4 w-4" /></Link>
+                            <Link href="/project" className="inline-flex h-11 items-center gap-2 rounded-[var(--ax-radius-control)] px-4 text-sm font-semibold text-[var(--ax-text)] transition-colors hover:bg-[var(--ax-surface-soft)]">Use Project results <ArrowRight className="h-3.5 w-3.5 text-[var(--ax-text-faint)]" /></Link>
                         </div>
                     </div>
-
-                    <div className="overflow-hidden rounded-[15px] border border-[var(--ax-line)] bg-[var(--ax-surface)] shadow-[var(--ax-shadow-floating)]">
-                        <div className="flex h-9 items-center justify-between border-b border-[var(--ax-line)] px-3.5 text-[10px] text-[var(--ax-text-faint)]">
-                            <span>Manuscript · Diffusion in bounded media</span><span>Draft</span>
-                        </div>
-                        <div className="grid min-h-[390px] md:grid-cols-[150px_1fr]">
-                            <aside className="border-b border-[var(--ax-line)] bg-[var(--ax-surface-soft)] p-3 md:border-b-0 md:border-r">
-                                <div className="text-[8px] font-semibold uppercase tracking-[0.13em] text-[var(--ax-text-faint)]">Document</div>
-                                <div className="mt-3 space-y-1 text-[10px] text-[var(--ax-text-soft)]">
-                                    {['Abstract', 'Introduction', 'Methods', 'Results', 'Discussion', 'References'].map((item, index) => (
-                                        <div key={item} className={`rounded-[6px] px-2 py-2 ${index === 3 ? 'bg-[var(--ax-surface)] font-semibold text-[var(--ax-text)] shadow-[0_1px_2px_rgb(23_36_54_/_0.05)]' : ''}`}>{item}</div>
-                                    ))}
-                                </div>
-                            </aside>
-                            <div className="bg-[var(--ax-canvas)] p-4 sm:p-6">
-                                <div className="mx-auto min-h-[335px] max-w-[700px] border border-[var(--ax-line)] bg-white px-7 py-8 shadow-[0_8px_24px_rgb(23_36_54_/_0.05)] sm:px-10">
-                                    <div className="text-center font-serif text-[24px] tracking-[-0.03em] text-[#15181e]">Diffusion in bounded media</div>
-                                    <div className="mt-2 text-center text-[9px] text-[#8b95a3]">A. Researcher · Axion Science Project</div>
-                                    <div className="mt-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7480]">Results</div>
-                                    <p className="mt-2 text-[11px] leading-5 text-[#555f6c]">The dominant spatial mode decays exponentially while preserving the expected symmetry of the boundary-constrained solution.</p>
-                                    <div className="mt-4 rounded-[7px] border border-[#e3e7ed] bg-[#fbfcfe] px-4 py-3 text-center font-serif text-[18px] text-[#171a20]">u(x,t) = e<sup>−αt</sup> sin(x)</div>
-                                    <div className="mt-4 grid gap-3 sm:grid-cols-[1.1fr_0.9fr]">
-                                        <div className="rounded-[7px] border border-[#e3e7ed] bg-[#fbfcfe] p-3">
-                                            <div className="text-[8px] text-[#8b95a3]">Figure 4 · linked result</div>
-                                            <svg viewBox="0 0 250 80" className="mt-2 h-[80px] w-full" aria-hidden="true">
-                                                <path d="M4 40H246" stroke="#d7dde5" strokeWidth="1" />
-                                                <path d="M4 40 C30 10 58 10 84 40 C110 70 138 70 164 40 C190 10 218 10 246 40" fill="none" stroke="#245da8" strokeWidth="2" />
-                                            </svg>
-                                        </div>
-                                        <div className="rounded-[7px] border border-[#e3e7ed] bg-white p-3 text-[9px] leading-5 text-[#66707c]">
-                                            <span className="font-semibold text-[#20242b]">Source</span><br />Math · PDE result<br /><br /><span className="font-semibold text-[#20242b]">Revision</span><br />Pinned · r4
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div className="relative min-w-0 lg:-ml-14 lg:-mr-12 xl:-ml-20 xl:-mr-20"><WriterHeroScene /></div>
                 </section>
 
                 <section id="workflow" className="border-y border-[var(--ax-line)] bg-[var(--ax-surface)]">
