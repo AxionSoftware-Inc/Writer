@@ -5,29 +5,19 @@ import "./globals.css";
 import "@/styles/axion-science-tokens.css";
 import "@/styles/axion-premium-landing.css";
 import "@/styles/axion-writer-chrome.css";
+import "@/styles/axion-premium-workspace.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { EcosystemBar } from "@/components/ecosystem/ecosystem-bar";
 
-const manrope = Manrope({
-    subsets: ["latin"],
-    variable: "--font-inter",
-});
-
-const playfair = Playfair_Display({
-    subsets: ["latin"],
-    variable: "--font-playfair",
-});
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-inter" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
 export const metadata: Metadata = {
     title: "Writer | Axion Science",
     description: "Scientific writing and publication workspace connected to Axion Science projects and evidence.",
 };
 
-export default function RootLayout({
-    children,
-}: Readonly<{
-    children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang="uz" suppressHydrationWarning>
             <body className={`${manrope.variable} ${playfair.variable} min-h-screen`}>
