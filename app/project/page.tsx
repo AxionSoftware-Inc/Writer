@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { AxActionLink, AxBadge, AxEmptyState, AxLoadingState, AxSectionHeader } from "@/components/axion";
+import { AxActionLink, AxBadge, AxEmptyState, AxLoadingState } from "@/components/axion";
 import { getEcosystemHref } from "@/lib/ecosystem/apps";
 import { listLocalScientificObjects } from "@/lib/ecosystem/local-object-store";
 import { getLocalProjectTitle, resolveActiveProjectId } from "@/lib/ecosystem/project-context";
@@ -11,10 +11,9 @@ import type { ScientificObject } from "@/lib/ecosystem/contracts";
 function WriterMark() {
     return (
         <svg viewBox="0 0 36 36" className="h-8 w-8 text-[var(--ax-accent)]" aria-hidden="true">
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="1.1" />
-            <ellipse cx="18" cy="18" rx="7" ry="15.5" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.72" />
-            <ellipse cx="18" cy="18" rx="15.5" ry="6.8" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.72" />
-            <path d="M3 18h30M18 2.5v31" stroke="currentColor" strokeWidth="0.75" opacity="0.55" />
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="1.05" />
+            <path d="M10 11h16M10 16h16M10 21h12M10 26h9" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.68" />
+            <path d="M23 24l4-4 2 2-4 4-3 1z" fill="currentColor" opacity="0.85" />
         </svg>
     );
 }
@@ -40,35 +39,47 @@ export default function WriterProjectResultsPage() {
     }, []);
 
     return (
-        <>
-            <header className="sticky top-0 z-40 border-b border-[var(--ax-line)] bg-[color-mix(in_srgb,var(--ax-surface)_96%,transparent)] backdrop-blur-xl">
-                <div className="mx-auto flex h-[64px] w-full max-w-[var(--ax-content-max)] items-center justify-between gap-5 px-4 sm:px-6">
-                    <a href="/" className="flex min-w-0 items-center gap-3 rounded-[var(--ax-radius-control)] outline-none focus-visible:shadow-[var(--ax-focus-ring)]">
+        <div className="ax-workspace-root min-h-[calc(100vh-28px)]">
+            <header className="ax-work-subnav sticky top-0 z-40">
+                <div className="ax-work-container flex h-16 items-center justify-between gap-5">
+                    <a href="/" className="flex min-w-0 items-center gap-3 rounded-[var(--ax-work-control-radius)] outline-none focus-visible:shadow-[var(--ax-focus-ring)]">
                         <WriterMark />
-                        <span className="truncate text-[19px] font-medium tracking-[-0.025em] text-[var(--ax-text)] sm:text-[20px]">Axion Writer</span>
+                        <span className="min-w-0 leading-none"><span className="block truncate font-serif text-[19px] font-medium tracking-[-0.03em]">Axion Writer</span><span className="mt-1 block text-[8px] font-semibold uppercase tracking-[0.2em] text-[var(--ax-text-faint)]">Project evidence</span></span>
                     </a>
-                    <nav className="flex items-center gap-2" aria-label="Writer">
+                    <nav className="flex items-center gap-1.5" aria-label="Writer">
                         <AxActionLink href={projectId ? `/documents?project=${encodeURIComponent(projectId)}` : "/documents"} variant="quiet" size="sm">Documents</AxActionLink>
                         <AxActionLink href={projectId ? `/new?project=${encodeURIComponent(projectId)}` : "/new"} variant="primary" size="sm">New document</AxActionLink>
                     </nav>
                 </div>
             </header>
 
-            <main className="min-h-[calc(100vh-96px)] bg-[var(--ax-canvas)] px-4 py-10 text-[var(--ax-text)] sm:px-6">
-                <div className="mx-auto max-w-5xl">
-                    <AxSectionHeader className="border-b border-[var(--ax-line)] pb-7" eyebrow="Project results" title={projectTitle || "Active project"} description="Choose a saved result and start a Writer draft from it. The result is read directly from this Project on the device." />
+            <main className="ax-work-container">
+                <section className="ax-work-pagehead">
+                    <div>
+                        <p className="ax-work-kicker">Project results</p>
+                        <h1 className="ax-work-title">{projectTitle || "Active project"}</h1>
+                        <p className="ax-work-lead">Choose a saved scientific result and start a Writer draft from it. Evidence stays linked to the same local Project instead of becoming a detached copy.</p>
+                    </div>
+                    <div className="ax-work-stats">
+                        <div className="ax-work-stat"><div className="ax-work-stat-value">{objects.length}</div><div className="ax-work-stat-label">Results</div></div>
+                        <div className="ax-work-stat"><div className="ax-work-stat-value">Math</div><div className="ax-work-stat-label">Source</div></div>
+                        <div className="ax-work-stat"><div className="ax-work-stat-value">Local</div><div className="ax-work-stat-label">Context</div></div>
+                    </div>
+                </section>
 
+                <section className="ax-work-section">
                     {!projectId ? (
                         <AxEmptyState title="No active Project." description="Open Writer from the Science Hub so the document can keep the same research context." />
                     ) : loading ? (
                         <AxLoadingState label="Loading Project results" detail="Reading saved scientific objects from this device." />
                     ) : objects.length ? (
-                        <div className="divide-y divide-[var(--ax-line)] border-y border-[var(--ax-line)]">
-                            {objects.map((object) => (
-                                <article key={object.id} className="grid gap-4 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                        <div className="ax-work-list">
+                            {objects.map((object, index) => (
+                                <article key={object.id} className="ax-work-row grid gap-4 px-1 py-6 sm:px-5 md:grid-cols-[54px_minmax(0,1fr)_auto] md:items-center lg:px-6">
+                                    <div className="font-serif text-[20px] text-[var(--ax-text-faint)]">{String(index + 1).padStart(2, "0")}</div>
                                     <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-base font-semibold text-[var(--ax-text)]">{object.title}</h2><AxBadge>Saved result</AxBadge></div>
-                                        <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--ax-text-faint)]">{object.domain || object.kind}</div>
+                                        <div className="flex flex-wrap items-center gap-2"><h2 className="truncate font-serif text-[26px] tracking-[-0.035em] text-[var(--ax-text)]">{object.title}</h2><AxBadge>Saved result</AxBadge></div>
+                                        <div className="mt-2 text-[9.5px] uppercase tracking-[0.13em] text-[var(--ax-text-faint)]">{object.domain || object.kind}</div>
                                     </div>
                                     <AxActionLink href={`/new?source=project&project=${encodeURIComponent(projectId)}&objectId=${encodeURIComponent(object.id)}`} variant="primary">New document</AxActionLink>
                                 </article>
@@ -77,8 +88,8 @@ export default function WriterProjectResultsPage() {
                     ) : (
                         <AxEmptyState title="No saved Math results yet." description="Solve something in Laboratory and press Save. The result will appear here without a server-side import step." action={<AxActionLink href={getEcosystemHref("math", "writer", projectId)}>Open Math</AxActionLink>} />
                     )}
-                </div>
+                </section>
             </main>
-        </>
+        </div>
     );
 }
