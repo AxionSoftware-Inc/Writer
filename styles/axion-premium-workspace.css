@@ -1,0 +1,41 @@
+/* Axion Science premium workspace system.
+ * Internal pages should feel like precise scientific instruments, not marketing surfaces.
+ */
+
+:root {
+  --ax-work-max: 1520px;
+  --ax-work-header: 64px;
+  --ax-work-panel-radius: 12px;
+  --ax-work-control-radius: 8px;
+  --ax-work-line: color-mix(in srgb, var(--ax-line) 88%, white);
+  --ax-work-line-strong: color-mix(in srgb, var(--ax-line-strong) 88%, white);
+  --ax-work-surface-muted: color-mix(in srgb, var(--ax-surface-soft) 72%, white);
+  --ax-work-shadow: 0 1px 2px rgb(15 23 42 / 0.025), 0 12px 34px rgb(15 23 42 / 0.045);
+}
+.ax-workspace-root{min-height:100%;background:var(--ax-canvas);color:var(--ax-text)}
+.ax-work-container{width:100%;max-width:var(--ax-work-max);margin-inline:auto;padding-inline:24px}
+.ax-work-pagehead{display:grid;gap:32px;padding-block:56px 40px;border-bottom:1px solid var(--ax-work-line)}
+.ax-work-kicker{color:var(--ax-accent);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.ax-work-title{margin-top:12px;max-width:900px;color:var(--ax-text);font-family:var(--ax-font-display);font-size:clamp(2.8rem,4.6vw,5.4rem);font-weight:500;line-height:.98;letter-spacing:-.052em}
+.ax-work-lead{margin-top:18px;max-width:680px;color:var(--ax-text-soft);font-size:15px;line-height:1.8}
+.ax-work-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-block:1px solid var(--ax-work-line)}
+.ax-work-stat{padding:14px 18px;text-align:center}.ax-work-stat+.ax-work-stat{border-left:1px solid var(--ax-work-line)}
+.ax-work-stat-value{font-family:var(--ax-font-display);font-size:23px;letter-spacing:-.035em}.ax-work-stat-label{margin-top:3px;color:var(--ax-text-faint);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.ax-work-section{padding-block:34px 56px}.ax-work-list{overflow:hidden;border-block:1px solid var(--ax-work-line);background:var(--ax-surface)}
+.ax-work-row{border-bottom:1px solid var(--ax-work-line);transition:background-color var(--ax-motion-fast) var(--ax-ease-standard)}.ax-work-row:last-child{border-bottom:0}.ax-work-row:hover{background:var(--ax-work-surface-muted)}
+.ax-work-panel{border:1px solid var(--ax-work-line);border-radius:var(--ax-work-panel-radius);background:var(--ax-surface)}
+.ax-work-panel-elevated{border:1px solid var(--ax-work-line);border-radius:var(--ax-work-panel-radius);background:var(--ax-surface);box-shadow:var(--ax-work-shadow)}
+.ax-work-input,.ax-work-select,.ax-work-button{min-height:40px;border-radius:var(--ax-work-control-radius)}
+.ax-work-input,.ax-work-select{border:1px solid var(--ax-work-line-strong);background:var(--ax-surface);color:var(--ax-text)}
+.ax-work-input:focus,.ax-work-select:focus{border-color:var(--ax-accent);outline:none;box-shadow:var(--ax-focus-ring)}
+.ax-work-subnav{border-bottom:1px solid var(--ax-work-line);background:color-mix(in srgb,var(--ax-surface) 96%,transparent);backdrop-filter:blur(18px) saturate(125%)}
+.ax-work-subnav-inner{width:100%;max-width:var(--ax-work-max);min-height:44px;margin-inline:auto;padding-inline:24px}
+#notebook,.site-workspace-shell{background:var(--ax-canvas)!important}
+#notebook>header,.site-workspace-topbar,.site-shell>.border-b:first-child{min-height:var(--ax-work-header)!important;border-color:var(--ax-work-line)!important;background:color-mix(in srgb,var(--ax-surface) 95%,transparent)!important;box-shadow:none!important;backdrop-filter:blur(18px) saturate(125%)}
+#notebook>header>div,.site-workspace-topbar>div,.site-shell>.border-b:first-child>div{max-width:var(--ax-work-max)!important}
+.notebook-document,.site-document-frame,.site-panel,.site-panel-strong,.site-soft-panel,.site-outline-card,.site-lab-card,.glass-panel{border-color:var(--ax-work-line)!important;border-radius:var(--ax-work-panel-radius)!important;background:var(--ax-surface)!important}
+.notebook-document,.site-document-frame,.site-panel-strong{box-shadow:var(--ax-work-shadow)!important}.site-panel,.site-soft-panel,.site-outline-card,.site-lab-card,.glass-panel{box-shadow:none!important}
+.site-toolbar-shell,.notebook-popover,.notebook-modal{border:1px solid var(--ax-work-line)!important;border-radius:var(--ax-work-panel-radius)!important;background:var(--ax-surface)!important;box-shadow:var(--ax-work-shadow)!important}
+.site-toolbar-segment,.site-toolbar-pill,.site-status-pill,.site-chip,.notebook-toolbar-button,.notebook-icon-button,.notebook-context-button,.notebook-floating-button{border-radius:var(--ax-work-control-radius)!important}.site-toolbar-pill-active,.site-chip-active{box-shadow:0 1px 2px rgb(15 23 42 / .04)!important}
+.site-shell::before,.glow-effect::after,.hero-glow{display:none!important}
+@media(min-width:640px){.ax-work-container,.ax-work-subnav-inner{padding-inline:32px}}@media(min-width:1024px){.ax-work-container,.ax-work-subnav-inner{padding-inline:48px}.ax-work-pagehead{grid-template-columns:minmax(0,1fr) 340px;align-items:end;padding-block:68px 46px}}@media(min-width:1280px){.ax-work-container,.ax-work-subnav-inner{padding-inline:64px}}@media(min-width:1536px){.ax-work-container,.ax-work-subnav-inner{padding-inline:80px}}@media(max-width:639px){.ax-work-pagehead{padding-block:40px 32px}.ax-work-title{font-size:clamp(2.6rem,14vw,4.4rem)}}@media(prefers-reduced-motion:reduce){.ax-work-row,.site-toolbar-pill,.notebook-toolbar-button,.notebook-icon-button{transition:none!important}}
