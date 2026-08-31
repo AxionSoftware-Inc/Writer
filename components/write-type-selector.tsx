@@ -1,17 +1,8 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import {
-    ArrowRight,
-    BookOpen,
-    FlaskConical,
-    GraduationCap,
-    Newspaper,
-    ScrollText,
-    X,
-} from "lucide-react";
+import { ArrowRight, BookOpen, FlaskConical, GraduationCap, Newspaper, ScrollText, X } from "lucide-react";
 
 import {
     DEFAULT_WRITER_TEMPLATE_ID,
@@ -48,9 +39,7 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
     const [selectedTemplateId, setSelectedTemplateId] = React.useState(DEFAULT_WRITER_TEMPLATE_ID);
 
     React.useEffect(() => {
-        if (isOpen) {
-            setSelectedTemplateId(DEFAULT_WRITER_TEMPLATE_ID);
-        }
+        if (isOpen) setSelectedTemplateId(DEFAULT_WRITER_TEMPLATE_ID);
     }, [isOpen]);
 
     const selectedTemplate =
@@ -63,9 +52,7 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
     );
     const SelectedIcon = iconMap[selectedTemplate.icon];
 
-    if (!isOpen) {
-        return null;
-    }
+    if (!isOpen) return null;
 
     const openDraftWithTemplate = (templateId: string) => {
         const query = new URLSearchParams();
@@ -75,164 +62,84 @@ export function WriteTypeSelector({ isOpen, onClose }: WriteTypeSelectorProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-            <div className="absolute inset-0 bg-black/28" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgb(15_23_42_/_0.28)] p-4 backdrop-blur-[3px] sm:p-6" role="dialog" aria-modal="true" aria-labelledby="writer-template-title">
+            <button className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Close template selector" />
 
-            <div className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-border/70 bg-background shadow-xl">
-                <div className="border-b border-border/60 bg-background/95 px-6 py-5 md:px-8 md:py-6">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="max-w-3xl">
-                            <div className="site-eyebrow">Writer Templates</div>
-                            <h2 className="mt-2 font-serif text-3xl font-black tracking-tight md:text-4xl">
-                                Professional hujjatni to'g'ri format bilan boshlang
-                            </h2>
-                            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-                                Template kutubxonasi qayta tartiblandi. Endi faqat asosiy, professional va amalda
-                                kerak bo'ladigan 6 ta start format qoldirilgan.
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={onClose}
-                            className="rounded-full border border-border/60 bg-background/80 p-2.5 text-muted-foreground transition-colors hover:text-foreground"
-                            type="button"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
+            <div className="relative flex max-h-[90vh] w-full max-w-[1040px] flex-col overflow-hidden rounded-[var(--ax-work-panel-radius)] border border-[var(--ax-work-line)] bg-[var(--ax-surface)] shadow-[0_28px_90px_rgb(15_23_42_/_0.17)]">
+                <header className="flex items-start justify-between gap-5 border-b border-[var(--ax-work-line)] px-5 py-5 sm:px-7 sm:py-6">
+                    <div>
+                        <div className="ax-work-kicker">Writer templates</div>
+                        <h2 id="writer-template-title" className="mt-2 font-serif text-[34px] font-medium tracking-[-0.045em] text-[var(--ax-text)] sm:text-[38px]">Choose the document structure.</h2>
+                        <p className="mt-3 max-w-2xl text-[12px] leading-6 text-[var(--ax-text-soft)]">Start from a professional manuscript structure. The template sets the initial sections; the document stays fully editable.</p>
                     </div>
-                </div>
+                    <button onClick={onClose} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ax-work-control-radius)] text-[var(--ax-text-faint)] hover:bg-[var(--ax-work-surface-muted)] hover:text-[var(--ax-text)]" type="button" aria-label="Close">
+                        <X className="h-4 w-4" />
+                    </button>
+                </header>
 
-                <div className="grid min-h-0 flex-1 gap-0 xl:grid-cols-[360px_minmax(0,1fr)]">
-                    <div className="min-h-0 overflow-y-auto border-b border-border/60 bg-background p-5 md:p-6 xl:border-b-0 xl:border-r">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <div className="site-eyebrow">Core Library</div>
-                            </div>
-                            <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                                {writerTemplates.length} templates
-                            </div>
+                <div className="grid min-h-0 flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
+                    <div className="min-h-0 overflow-y-auto border-b border-[var(--ax-work-line)] lg:border-b-0 lg:border-r">
+                        <div className="flex items-center justify-between border-b border-[var(--ax-work-line)] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--ax-text-faint)]">
+                            <span>Template library</span><span>{writerTemplates.length}</span>
                         </div>
-
-                        <div className="mt-5 space-y-2.5">
-                            {writerTemplates.map((template) => {
+                        <div>
+                            {writerTemplates.map((template, index) => {
                                 const Icon = iconMap[template.icon];
                                 const selected = template.id === selectedTemplate.id;
-
                                 return (
                                     <button
                                         key={template.id}
                                         type="button"
                                         onClick={() => setSelectedTemplateId(template.id)}
-                                        className={`w-full rounded-[1.2rem] border px-4 py-3.5 text-left transition-colors ${
-                                            selected
-                                                ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
-                                                : "border-border/60 bg-background/70 hover:border-[var(--accent)]/20 hover:bg-background"
-                                        }`}
+                                        className={`grid w-full grid-cols-[28px_36px_minmax(0,1fr)] items-center gap-3 border-b border-[var(--ax-work-line)] px-5 py-4 text-left transition-colors ${selected ? "bg-[var(--ax-work-surface-muted)]" : "hover:bg-[var(--ax-work-surface-muted)]"}`}
                                     >
-                                        <div className="flex items-center justify-between gap-4">
-                                            <div className="flex min-w-0 items-center gap-3">
-                                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${template.accentClassName}`}>
-                                                    <Icon className="h-4.5 w-4.5" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="truncate text-sm font-bold tracking-tight">{template.title}</div>
-                                                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                                                        {templateCategoryLabel(template.category)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {selected ? (
-                                                <span className="rounded-full border border-[var(--accent)]/30 bg-background/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground">
-                                                    Active
-                                                </span>
-                                            ) : null}
-                                        </div>
+                                        <span className="font-serif text-[15px] text-[var(--ax-text-faint)]">{String(index + 1).padStart(2, "0")}</span>
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ax-work-line)] text-[var(--ax-accent)]"><Icon className="h-3.5 w-3.5" /></span>
+                                        <span className="min-w-0">
+                                            <span className="block truncate text-[12px] font-semibold text-[var(--ax-text)]">{template.title}</span>
+                                            <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--ax-text-faint)]">{templateCategoryLabel(template.category)}</span>
+                                        </span>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    <aside className="min-h-0 overflow-y-auto bg-muted/15 p-6 md:p-8">
-                        <div className="site-panel-strong p-5 md:p-6">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className={`flex h-14 w-14 items-center justify-center rounded-[1.25rem] border ${selectedTemplate.accentClassName}`}>
-                                    <SelectedIcon className="h-6 w-6" />
-                                </div>
-                                <span className="rounded-full border border-border/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                                    {templateCategoryLabel(selectedTemplate.category)}
-                                </span>
-                            </div>
-
-                            <h3 className="mt-4 font-serif text-2xl font-black">{selectedTemplate.title}</h3>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedTemplate.description}</p>
-
-                            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Category</div>
-                                    <div className="mt-2 text-sm font-bold text-foreground">{templateCategoryLabel(selectedTemplate.category)}</div>
-                                </div>
-                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Use Case</div>
-                                    <div className="mt-2 text-sm font-bold text-foreground">{selectedTemplate.recommendedFor.length}</div>
-                                </div>
-                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Add-ons</div>
-                                    <div className="mt-2 text-sm font-bold text-foreground">{selectedAddOns.length}</div>
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => openDraftWithTemplate(selectedTemplate.id)}
-                                className="site-button-primary mt-6 w-full"
-                            >
-                                Shu template bilan davom etish
-                                <ArrowRight className="h-4 w-4" />
-                            </button>
+                    <aside className="min-h-0 overflow-y-auto p-5 sm:p-7 lg:p-8">
+                        <div className="flex items-start justify-between gap-5">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--ax-work-line)] bg-[var(--ax-surface)] text-[var(--ax-accent)]"><SelectedIcon className="h-[18px] w-[18px]" /></div>
+                            <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--ax-text-faint)]">{templateCategoryLabel(selectedTemplate.category)}</span>
                         </div>
 
-                        <div className="mt-4 grid gap-4">
-                            <div className="site-panel p-4">
-                                <div className="site-eyebrow">Best For</div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {selectedTemplate.recommendedFor.map((item) => (
-                                        <span key={item} className="site-chip !px-3 !py-2 !text-[10px]">
-                                            {item}
-                                        </span>
-                                    ))}
+                        <h3 className="mt-5 font-serif text-[34px] font-medium tracking-[-0.045em] text-[var(--ax-text)]">{selectedTemplate.title}</h3>
+                        <p className="mt-3 max-w-2xl text-[13px] leading-7 text-[var(--ax-text-soft)]">{selectedTemplate.description}</p>
+
+                        <div className="mt-7 grid grid-cols-3 border-y border-[var(--ax-work-line)]">
+                            <div className="py-4 pr-4"><div className="text-[9px] uppercase tracking-[0.12em] text-[var(--ax-text-faint)]">Category</div><div className="mt-1.5 text-[11px] font-semibold">{templateCategoryLabel(selectedTemplate.category)}</div></div>
+                            <div className="border-l border-[var(--ax-work-line)] px-4 py-4"><div className="text-[9px] uppercase tracking-[0.12em] text-[var(--ax-text-faint)]">Use cases</div><div className="mt-1.5 text-[11px] font-semibold">{selectedTemplate.recommendedFor.length}</div></div>
+                            <div className="border-l border-[var(--ax-work-line)] py-4 pl-4"><div className="text-[9px] uppercase tracking-[0.12em] text-[var(--ax-text-faint)]">Add-ons</div><div className="mt-1.5 text-[11px] font-semibold">{selectedAddOns.length}</div></div>
+                        </div>
+
+                        <div className="mt-7 grid gap-6 sm:grid-cols-2">
+                            <div>
+                                <div className="ax-work-kicker text-[var(--ax-text-faint)]">Best for</div>
+                                <div className="mt-3 divide-y divide-[var(--ax-work-line)] border-y border-[var(--ax-work-line)]">
+                                    {selectedTemplate.recommendedFor.slice(0, 4).map((item) => <div key={item} className="py-2.5 text-[11px] font-semibold text-[var(--ax-text-soft)]">{item}</div>)}
                                 </div>
                             </div>
-
-                            <div className="site-panel p-4">
-                                <div className="site-eyebrow">Included Structure</div>
-                                <div className="mt-3 space-y-2">
-                                    {selectedAddOns.length ? (
-                                        selectedAddOns.map((addOn) => (
-                                            <div key={addOn.id} className="site-outline-card px-3 py-3">
-                                                <div className="text-sm font-semibold">{addOn.title}</div>
-                                                <div className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                                                    {addOn.description}
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="site-outline-card px-3 py-3 text-sm leading-6 text-muted-foreground">
-                                            Bu template asosiy professional skelet bilan ochiladi. Qo'shimcha bloklar
-                                            majburiy emas.
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="site-panel p-4">
-                                <div className="site-eyebrow">Template Note</div>
-                                <div className="mt-3 rounded-[1.2rem] border border-border/60 bg-background/70 px-3 py-3 text-sm leading-6 text-muted-foreground">
-                                    Har bir template edit vaqtida keyin ham almashtirilishi mumkin, lekin boshlanishida
-                                    to'g'ri format tanlash writer ichidagi section strukturasini ancha silliq qiladi.
+                            <div>
+                                <div className="ax-work-kicker text-[var(--ax-text-faint)]">Included structure</div>
+                                <div className="mt-3 divide-y divide-[var(--ax-work-line)] border-y border-[var(--ax-work-line)]">
+                                    {selectedAddOns.length ? selectedAddOns.map((addOn) => (
+                                        <div key={addOn.id} className="py-2.5"><div className="text-[11px] font-semibold text-[var(--ax-text)]">{addOn.title}</div><div className="mt-1 text-[10px] leading-5 text-[var(--ax-text-faint)]">{addOn.description}</div></div>
+                                    )) : <div className="py-3 text-[10px] leading-5 text-[var(--ax-text-faint)]">Core professional structure. Add sections later when the manuscript needs them.</div>}
                                 </div>
                             </div>
                         </div>
+
+                        <button type="button" onClick={() => openDraftWithTemplate(selectedTemplate.id)} className="mt-8 inline-flex h-10 items-center gap-2 rounded-[var(--ax-work-control-radius)] bg-[var(--ax-accent-strong)] px-5 text-[11px] font-semibold text-white hover:bg-[var(--ax-accent)]">
+                            Start this document <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
                     </aside>
                 </div>
             </div>
