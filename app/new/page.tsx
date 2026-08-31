@@ -95,14 +95,14 @@ function NewPaperPageContent() {
     }
 
     return (
-        <div className="flex h-[calc(100dvh-32px)] min-h-0 w-full flex-col overflow-hidden">
+        <div className="ax-workspace-root flex h-[calc(100dvh-28px)] min-h-0 w-full flex-col overflow-hidden">
             <PaperEditorWorkspace formData={formData} onChange={setFormData} onSubmit={handleSubmit} saveState={status} errorMessage={errorMessage} mode="new" documentId="new-draft" />
         </div>
     );
 }
 
 function NewPaperPageFallback() {
-    return <div className="flex h-[calc(100dvh-32px)] min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-[var(--ax-canvas)] text-[var(--ax-text-soft)]"><p>Writer yuklanmoqda...</p></div>;
+    return <div className="ax-workspace-root flex h-[calc(100dvh-28px)] min-h-0 w-full flex-col items-center justify-center overflow-hidden text-[var(--ax-text-soft)]"><p>Preparing Writer…</p></div>;
 }
 
 export default function NewPaperPage() {
