@@ -17,23 +17,18 @@ export function EcosystemBar({ currentApp, projectId, projectTitle }: { currentA
 
   return (
     <div className="border-b border-[var(--ax-line)] bg-[var(--ax-surface)] text-[var(--ax-text-soft)]">
-      <div className="mx-auto flex h-8 w-full max-w-[var(--ax-content-max)] items-center justify-between gap-3 px-4 sm:px-6">
-        <a href={getEcosystemHref("science", currentApp, activeProjectId)} className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ax-accent)]">
-          {ECOSYSTEM_NAME}
-        </a>
+      <div className="mx-auto flex h-8 w-full max-w-[1520px] items-center justify-between gap-4 px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
+        <a href={getEcosystemHref("science", currentApp, activeProjectId)} className="shrink-0 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[var(--ax-accent)]">{ECOSYSTEM_NAME}</a>
         <nav className="flex min-w-0 self-stretch items-center overflow-x-auto" aria-label="Science ecosystem">
           {ECOSYSTEM_APPS.map((app) => {
             const href = getEcosystemHref(app.id, currentApp, activeProjectId);
             const active = app.id === currentApp;
-            const className = `relative flex h-full items-center whitespace-nowrap px-2.5 text-[10.5px] font-medium transition-colors duration-[var(--ax-motion-fast)] ${active ? "text-[var(--ax-text)]" : "text-[var(--ax-text-soft)] hover:text-[var(--ax-text)]"}`;
-            const content = <>{app.label}{active ? <span className="absolute inset-x-2.5 bottom-0 h-px bg-[var(--ax-accent)]" /> : null}</>;
+            const className = `relative flex h-full items-center whitespace-nowrap px-3 text-[10px] font-medium transition-colors duration-[var(--ax-motion-fast)] ${active ? "text-[var(--ax-text)]" : "text-[var(--ax-text-soft)] hover:text-[var(--ax-text)]"}`;
+            const content = <>{app.label}{active ? <span className="absolute inset-x-3 bottom-0 h-px bg-[var(--ax-accent)]" /> : null}</>;
             return href === "#" ? <span key={app.id} className={`${className} cursor-default opacity-40`}>{content}</span> : <a key={app.id} href={href} className={className} aria-current={active ? "page" : undefined}>{content}</a>;
           })}
         </nav>
-        <a href={getEcosystemHref("science", currentApp, activeProjectId)} className="hidden min-w-0 max-w-[260px] items-center gap-2 text-[10.5px] sm:flex">
-          <span className="text-[var(--ax-text-faint)]">Project</span>
-          <span className="truncate font-medium text-[var(--ax-text)]">{activeProjectTitle || (activeProjectId ? "Active project" : "Local workspace")}</span>
-        </a>
+        <a href={getEcosystemHref("science", currentApp, activeProjectId)} className="hidden min-w-0 max-w-[280px] items-center gap-2 text-[10px] sm:flex"><span className="text-[var(--ax-text-faint)]">Project</span><span className="truncate font-medium text-[var(--ax-text)]">{activeProjectTitle || (activeProjectId ? "Active project" : "Local workspace")}</span></a>
       </div>
     </div>
   );
