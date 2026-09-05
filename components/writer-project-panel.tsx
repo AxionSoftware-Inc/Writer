@@ -17,69 +17,37 @@ import {
 import { type WriterProjectSection, getWriterSectionKey } from "@/lib/writer-project";
 
 function getProgressTone(progressState: WriterProjectSection["progress_state"], active: boolean) {
-    if (active) {
-        return "border-foreground bg-foreground text-background";
-    }
-
-    if (progressState === "done") {
-        return "border-emerald-500/25 bg-[linear-gradient(135deg,rgba(16,185,129,0.10),rgba(255,255,255,0.02))]";
-    }
-
-    if (progressState === "drafting") {
-        return "border-amber-500/25 bg-[linear-gradient(135deg,rgba(245,158,11,0.10),rgba(255,255,255,0.02))]";
-    }
-
-    return "border-sky-500/20 bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(255,255,255,0.02))]";
+    if (active) return "border-[var(--ax-accent)] bg-[var(--ax-accent-soft)]";
+    if (progressState === "done") return "border-[var(--ax-work-line)] bg-emerald-500/[0.025]";
+    if (progressState === "drafting") return "border-[var(--ax-work-line)] bg-amber-500/[0.025]";
+    return "border-[var(--ax-work-line)] bg-[var(--ax-surface)]";
 }
 
 function getProgressDotTone(progressState: WriterProjectSection["progress_state"], active: boolean) {
-    if (active) {
-        return "bg-background/80";
-    }
-
-    if (progressState === "done") {
-        return "bg-emerald-500";
-    }
-
-    if (progressState === "drafting") {
-        return "bg-amber-500";
-    }
-
+    if (active) return "bg-[var(--ax-accent)]";
+    if (progressState === "done") return "bg-emerald-500";
+    if (progressState === "drafting") return "bg-amber-500";
     return "bg-sky-500";
 }
 
-function HoverHint({
-    label,
-    children,
-}: {
-    label: string;
-    children: ReactNode;
-}) {
+function HoverHint({ label, children }: { label: string; children: ReactNode }) {
     return (
         <div className="group relative">
             {children}
-            <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-[220px] -translate-x-1/2 rounded-xl border border-border/70 bg-background/95 px-3 py-2 text-[11px] font-medium leading-5 text-foreground opacity-0 shadow-lg transition-all delay-700 duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-[220px] -translate-x-1/2 rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line)] bg-[var(--ax-surface)] px-2.5 py-1.5 text-[10px] font-medium leading-4 text-[var(--ax-text)] opacity-0 shadow-[var(--ax-work-shadow)] transition-opacity delay-500 group-hover:opacity-100">
                 {label}
             </div>
         </div>
     );
 }
 
-function ActionIcon({
-    icon: Icon,
-    label,
-    onClick,
-}: {
-    icon: LucideIcon;
-    label: string;
-    onClick: () => void;
-}) {
+function ActionIcon({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
     return (
         <HoverHint label={label}>
             <button
                 type="button"
                 onClick={onClick}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line)] bg-[var(--ax-surface)] text-[var(--ax-text-soft)] transition-colors hover:bg-[var(--ax-work-surface-muted)] hover:text-[var(--ax-text)]"
                 aria-label={label}
             >
                 <Icon className="h-3.5 w-3.5" />
@@ -87,6 +55,8 @@ function ActionIcon({
         </HoverHint>
     );
 }
+
+const controlClass = "w-full rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line-strong)] bg-[var(--ax-surface)] px-3 py-2 text-xs font-semibold text-[var(--ax-text)] outline-none transition-colors focus:border-[var(--ax-accent)] focus:shadow-[var(--ax-focus-ring)]";
 
 export function WriterProjectPanel({
     sections,
@@ -115,223 +85,94 @@ export function WriterProjectPanel({
     const [kindFilter, setKindFilter] = useState<WriterProjectSection["kind"] | "all">("all");
     const [hideDone, setHideDone] = useState(false);
 
-    const visibleSections = useMemo(() => {
-        return sections.filter((section) => {
-            if (hideDone && section.progress_state === "done") {
-                return false;
-            }
-            if (kindFilter !== "all" && section.kind !== kindFilter) {
-                return false;
-            }
-            if (!search.trim()) {
-                return true;
-            }
-            const haystack = `${section.title} ${section.kind} ${section.progress_state}`.toLowerCase();
-            return haystack.includes(search.trim().toLowerCase());
-        });
-    }, [hideDone, kindFilter, search, sections]);
+    const visibleSections = useMemo(() => sections.filter((section) => {
+        if (hideDone && section.progress_state === "done") return false;
+        if (kindFilter !== "all" && section.kind !== kindFilter) return false;
+        if (!search.trim()) return true;
+        const haystack = `${section.title} ${section.kind} ${section.progress_state}`.toLowerCase();
+        return haystack.includes(search.trim().toLowerCase());
+    }), [hideDone, kindFilter, search, sections]);
 
     return (
-        <div className="overflow-hidden rounded-[1.6rem] border border-border/60 bg-background/85 p-3 shadow-sm">
-            <div className="rounded-[1.2rem] border border-border/50 bg-muted/10 p-3">
-                <div className="flex items-start justify-between gap-2.5">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                            <FolderTree className="h-3.5 w-3.5 text-teal-500" />
-                            Files
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 font-bold uppercase tracking-[0.14em]">
-                                {documentKind}
-                            </span>
-                            <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 font-bold uppercase tracking-[0.14em]">
-                                {sections.length}
-                            </span>
-                        </div>
+        <div className="overflow-hidden rounded-[var(--ax-work-panel-radius)] border border-[var(--ax-work-line)] bg-[var(--ax-surface)]">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--ax-work-line)] px-4 py-3">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ax-text-faint)]">
+                        <FolderTree className="h-3.5 w-3.5 text-[var(--ax-accent)]" />
+                        Document structure
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2 text-[10px] text-[var(--ax-text-soft)]">
+                        <span>{documentKind}</span><span>·</span><span>{sections.length} sections</span>
                     </div>
                 </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-1.5">
-                    <ActionIcon icon={FilePlus2} label="Yangi file yaratish" onClick={onAddSection} />
-                    <ActionIcon icon={Copy} label="Hozirgi file nusxasini yaratish" onClick={onDuplicateSection} />
+                <div className="flex gap-1.5">
+                    <ActionIcon icon={FilePlus2} label="Add section" onClick={onAddSection} />
+                    <ActionIcon icon={Copy} label="Duplicate current section" onClick={onDuplicateSection} />
                 </div>
             </div>
 
-            <div className="mt-3 rounded-[1.2rem] border border-border/50 bg-muted/10 p-3">
-                <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    <Search className="h-3.5 w-3.5 text-accent" />
-                    Navigation
+            <div className="border-b border-[var(--ax-work-line)] p-3">
+                <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ax-text-faint)]" />
+                    <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search sections" className={`${controlClass} pl-9`} />
                 </div>
-                <div className="space-y-2">
+                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                     <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder="File qidirish..."
-                            className="w-full rounded-2xl border border-border/60 bg-background px-9 py-2.5 text-sm font-medium outline-none transition-colors focus:border-accent/40"
-                        />
-                    </div>
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-                        <div className="relative">
-                            <Filter className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                            <select
-                                value={kindFilter}
-                                onChange={(event) => setKindFilter(event.target.value as WriterProjectSection["kind"] | "all")}
-                                className="w-full appearance-none rounded-2xl border border-border/60 bg-background px-9 py-2.5 text-sm font-medium outline-none transition-colors focus:border-accent/40"
-                            >
-                                <option value="all">All file kinds</option>
-                                <option value="frontmatter">Frontmatter</option>
-                                <option value="chapter">Chapter</option>
-                                <option value="section">Section</option>
-                                <option value="appendix">Appendix</option>
-                                <option value="references">References</option>
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setHideDone((value) => !value)}
-                            className={`rounded-2xl border px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] transition-colors ${
-                                hideDone
-                                    ? "border-accent/25 bg-[var(--accent-soft)] text-accent"
-                                    : "border-border/60 bg-background text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            Hide done
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-3 rounded-[1.2rem] border border-border/50 bg-muted/10 p-3">
-                <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Active file
-                </div>
-                <div className="space-y-2.5">
-                    <input
-                        value={activeSection.title}
-                        onChange={(event) => onUpdateActiveSection({ title: event.target.value })}
-                        className="w-full rounded-2xl border border-border/60 bg-background px-3.5 py-2 text-sm font-semibold outline-none transition-colors focus:border-accent/40"
-                        placeholder="File nomi"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                        <select
-                            value={activeSection.kind}
-                            onChange={(event) => onUpdateActiveSection({ kind: event.target.value as WriterProjectSection["kind"] })}
-                            className="min-w-0 rounded-2xl border border-border/60 bg-background px-3 py-2 text-xs font-semibold outline-none transition-colors focus:border-accent/40"
-                        >
+                        <Filter className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ax-text-faint)]" />
+                        <select value={kindFilter} onChange={(event) => setKindFilter(event.target.value as WriterProjectSection["kind"] | "all")} className={`${controlClass} appearance-none pl-9 pr-8`}>
+                            <option value="all">All section kinds</option>
                             <option value="frontmatter">Frontmatter</option>
                             <option value="chapter">Chapter</option>
                             <option value="section">Section</option>
                             <option value="appendix">Appendix</option>
                             <option value="references">References</option>
                         </select>
-                        <select
-                            value={activeSection.progress_state}
-                            onChange={(event) =>
-                                onUpdateActiveSection({
-                                    progress_state: event.target.value as WriterProjectSection["progress_state"],
-                                })
-                            }
-                            className="min-w-0 rounded-2xl border border-border/60 bg-background px-3 py-2 text-xs font-semibold outline-none transition-colors focus:border-accent/40"
-                        >
-                            <option value="todo">Todo</option>
-                            <option value="drafting">Drafting</option>
-                            <option value="done">Done</option>
-                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ax-text-faint)]" />
                     </div>
+                    <button type="button" onClick={() => setHideDone((value) => !value)} className={`rounded-[var(--ax-work-control-radius)] border px-3 text-[10px] font-semibold ${hideDone ? "border-[var(--ax-accent)] bg-[var(--ax-accent-soft)] text-[var(--ax-accent-strong)]" : "border-[var(--ax-work-line)] bg-[var(--ax-surface)] text-[var(--ax-text-soft)] hover:bg-[var(--ax-work-surface-muted)]"}`}>
+                        Hide done
+                    </button>
                 </div>
             </div>
 
-            <div className="mt-3 max-h-[52vh] space-y-2 overflow-x-hidden overflow-y-auto pr-1">
+            <div className="border-b border-[var(--ax-work-line)] p-3">
+                <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.15em] text-[var(--ax-text-faint)]">Active section</div>
+                <input value={activeSection.title} onChange={(event) => onUpdateActiveSection({ title: event.target.value })} className={controlClass} placeholder="Section title" />
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                    <select value={activeSection.kind} onChange={(event) => onUpdateActiveSection({ kind: event.target.value as WriterProjectSection["kind"] })} className={controlClass}>
+                        <option value="frontmatter">Frontmatter</option><option value="chapter">Chapter</option><option value="section">Section</option><option value="appendix">Appendix</option><option value="references">References</option>
+                    </select>
+                    <select value={activeSection.progress_state} onChange={(event) => onUpdateActiveSection({ progress_state: event.target.value as WriterProjectSection["progress_state"] })} className={controlClass}>
+                        <option value="todo">Todo</option><option value="drafting">Drafting</option><option value="done">Done</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="max-h-[52vh] overflow-x-hidden overflow-y-auto">
                 {visibleSections.map((section) => {
                     const index = sections.findIndex((entry) => getWriterSectionKey(entry) === getWriterSectionKey(section));
                     const sectionId = getWriterSectionKey(section);
                     const active = sectionId === activeSectionId;
-
                     return (
-                        <div
-                            key={sectionId}
-                            className={`overflow-hidden rounded-2xl border px-3 py-2.5 transition ${getProgressTone(section.progress_state, active)}`}
-                        >
+                        <div key={sectionId} className={`border-b px-3 py-3 last:border-b-0 ${getProgressTone(section.progress_state, active)}`}>
                             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => onSelectSection(sectionId)}
-                                    className="flex min-w-0 items-center gap-2 text-left"
-                                >
-                                    <div
-                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                                            active ? "bg-background/10" : "bg-background/70 text-foreground"
-                                        }`}
-                                    >
-                                        <BookOpen className="h-3.5 w-3.5" />
-                                    </div>
+                                <button type="button" onClick={() => onSelectSection(sectionId)} className="flex min-w-0 items-center gap-2.5 text-left">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line)] bg-[var(--ax-surface)] text-[var(--ax-text-soft)]"><BookOpen className="h-3.5 w-3.5" /></div>
                                     <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${getProgressDotTone(section.progress_state, active)}`} />
-                                            <div className="truncate text-sm font-bold">{section.title}</div>
-                                        </div>
-                                        <div
-                                            className={`mt-1 truncate text-[10px] uppercase tracking-[0.16em] ${
-                                                active ? "text-background/70" : "text-muted-foreground"
-                                            }`}
-                                        >
-                                            {section.kind} | {section.progress_state} | {index + 1}
-                                        </div>
+                                        <div className="flex items-center gap-2"><span className={`h-2 w-2 shrink-0 rounded-full ${getProgressDotTone(section.progress_state, active)}`} /><div className="truncate text-xs font-semibold text-[var(--ax-text)]">{section.title}</div></div>
+                                        <div className="mt-1 truncate text-[9px] uppercase tracking-[0.13em] text-[var(--ax-text-faint)]">{section.kind} · {section.progress_state} · {index + 1}</div>
                                     </div>
                                 </button>
-                                <div className="grid shrink-0 grid-cols-3 gap-1">
-                                    <HoverHint label="File'ni yuqoriga surish">
-                                        <button
-                                            type="button"
-                                            onClick={() => onMoveSection(sectionId, "up")}
-                                            disabled={index === 0}
-                                            className={`rounded-lg border p-1.5 ${
-                                                active ? "border-background/20 text-background" : "border-border/60 text-muted-foreground"
-                                            } disabled:opacity-40`}
-                                            aria-label="Move up"
-                                        >
-                                            <ChevronUp className="h-3.5 w-3.5" />
-                                        </button>
-                                    </HoverHint>
-                                    <HoverHint label="File'ni pastga surish">
-                                        <button
-                                            type="button"
-                                            onClick={() => onMoveSection(sectionId, "down")}
-                                            disabled={index === sections.length - 1}
-                                            className={`rounded-lg border p-1.5 ${
-                                                active ? "border-background/20 text-background" : "border-border/60 text-muted-foreground"
-                                            } disabled:opacity-40`}
-                                            aria-label="Move down"
-                                        >
-                                            <ChevronDown className="h-3.5 w-3.5" />
-                                        </button>
-                                    </HoverHint>
-                                    <HoverHint label="File'ni o'chirish">
-                                        <button
-                                            type="button"
-                                            onClick={() => onRemoveSection(sectionId)}
-                                            disabled={sections.length === 1}
-                                            className={`rounded-lg border p-1.5 ${
-                                                active ? "border-background/20 text-background" : "border-border/60 text-muted-foreground"
-                                            } disabled:opacity-40`}
-                                            aria-label="Remove file"
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                    </HoverHint>
+                                <div className="flex shrink-0 gap-1">
+                                    <HoverHint label="Move up"><button type="button" onClick={() => onMoveSection(sectionId, "up")} disabled={index === 0} className="rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line)] p-1.5 text-[var(--ax-text-soft)] disabled:opacity-30" aria-label="Move up"><ChevronUp className="h-3.5 w-3.5" /></button></HoverHint>
+                                    <HoverHint label="Move down"><button type="button" onClick={() => onMoveSection(sectionId, "down")} disabled={index === sections.length - 1} className="rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line)] p-1.5 text-[var(--ax-text-soft)] disabled:opacity-30" aria-label="Move down"><ChevronDown className="h-3.5 w-3.5" /></button></HoverHint>
+                                    <HoverHint label="Remove section"><button type="button" onClick={() => onRemoveSection(sectionId)} disabled={sections.length === 1} className="rounded-[var(--ax-work-control-radius)] border border-[var(--ax-work-line)] p-1.5 text-[var(--ax-text-soft)] disabled:opacity-30" aria-label="Remove section"><Trash2 className="h-3.5 w-3.5" /></button></HoverHint>
                                 </div>
                             </div>
                         </div>
                     );
                 })}
-                {!visibleSections.length ? (
-                    <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-                        Hozirgi filter bo&apos;yicha file topilmadi.
-                    </div>
-                ) : null}
+                {!visibleSections.length ? <div className="px-4 py-8 text-center text-[11px] text-[var(--ax-text-soft)]">No sections match the current filters.</div> : null}
             </div>
         </div>
     );
