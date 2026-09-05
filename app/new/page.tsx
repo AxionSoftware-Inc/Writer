@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { PaperEditorWorkspace, type PaperFormData } from "@/components/paper-editor-workspace";
@@ -90,19 +90,38 @@ function NewPaperPageContent() {
         return () => window.clearTimeout(timer);
     }, [importId, objectId, source]);
 
-    async function handleSubmit(nextData?: PaperFormData) {
+    const createDraft = useCallback(async (data: PaperFormData) => {
         setStatus("submitting");
         setErrorMessage("");
         try {
-            await createWriterPaper(nextData ?? formData);
+            const created = await createWriterPaper(data);
             setStatus("success");
-            setTimeout(() => router.push("/documents"), 900);
+            return created;
         } catch (error) {
             console.error("Submission error:", error);
             setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
             setStatus("error");
+            return null;
         }
-    }
+    }, []);
+
+    const handleSubmit = useCallback(async (nextData?: PaperFormData) => {
+        const created = await createDraft(nextData ?? formData);
+        if (created) window.setTimeout(() => router.push("/documents"), 900);
+    }, [createDraft, formData, router]);
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") return;
+            event.preventDefault();
+            if (status === "submitting") return;
+            void createDraft(formData).then((created) => {
+                if (created) router.replace(`/${created.id}`);
+            });
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [createDraft, formData, router, status]);
 
     return (
         <div className="ax-workspace-root flex h-[calc(100dvh-28px)] min-h-0 w-full flex-col overflow-hidden">
