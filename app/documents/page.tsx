@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Search, Trash2, X } from "lucide-react";
 
@@ -21,6 +21,7 @@ type Paper = {
 };
 
 type Filter = "all" | "draft" | "published";
+type ArchiveCounts = { all: number; draft: number; published: number };
 
 function WriterMark() {
     return (
@@ -32,8 +33,17 @@ function WriterMark() {
     );
 }
 
+function countArchive(papers: Paper[]): ArchiveCounts {
+    return {
+        all: papers.length,
+        draft: papers.filter((paper) => paper.status === "draft").length,
+        published: papers.filter((paper) => paper.status === "published").length,
+    };
+}
+
 export default function DocumentsPage() {
     const [papers, setPapers] = useState<Paper[]>([]);
+    const [counts, setCounts] = useState<ArchiveCounts>({ all: 0, draft: 0, published: 0 });
     const [loading, setLoading] = useState(true);
     const [notice, setNotice] = useState<string | null>(null);
     const [filter, setFilter] = useState<Filter>("all");
@@ -47,11 +57,28 @@ export default function DocumentsPage() {
             const params = new URLSearchParams();
             if (filter !== "all") params.set("status", filter);
             if (query.trim()) params.set("q", query.trim());
-            const response = await fetchPublic(`/api/builder/papers/?${params.toString()}`);
-            if (!response.ok) throw new Error("archive-unavailable");
-            setPapers(await response.json());
+
+            const filteredUrl = `/api/builder/papers/?${params.toString()}`;
+            const needsArchiveSnapshot = filter !== "all" || Boolean(query.trim());
+            const [filteredResponse, archiveResponse] = await Promise.all([
+                fetchPublic(filteredUrl),
+                needsArchiveSnapshot ? fetchPublic("/api/builder/papers/") : Promise.resolve(null),
+            ]);
+
+            if (!filteredResponse.ok || (archiveResponse && !archiveResponse.ok)) {
+                throw new Error("archive-unavailable");
+            }
+
+            const filteredPapers = await filteredResponse.json() as Paper[];
+            const archivePapers = archiveResponse
+                ? await archiveResponse.json() as Paper[]
+                : filteredPapers;
+
+            setPapers(filteredPapers);
+            setCounts(countArchive(archivePapers));
         } catch (error) {
             setPapers([]);
+            setCounts({ all: 0, draft: 0, published: 0 });
             setNotice(isExpectedBackendOfflineError(error)
                 ? "Document archive is offline. Local drafting and new documents remain available."
                 : "The document archive could not be loaded. You can still start a new draft.");
@@ -64,12 +91,6 @@ export default function DocumentsPage() {
         const timer = window.setTimeout(() => void fetchPapers(), 260);
         return () => window.clearTimeout(timer);
     }, [fetchPapers]);
-
-    const counts = useMemo(() => ({
-        all: papers.length,
-        draft: papers.filter((paper) => paper.status === "draft").length,
-        published: papers.filter((paper) => paper.status === "published").length,
-    }), [papers]);
 
     return (
         <div className="ax-workspace-root min-h-[calc(100vh-28px)]">
@@ -131,7 +152,7 @@ export default function DocumentsPage() {
                         {loading ? (
                             <AxLoadingState label="Loading documents" detail="Reading the current Writer archive." />
                         ) : papers.length === 0 ? (
-                            <AxEmptyState title="No documents here yet." description="Start with a clean draft or create one from a saved Project result." action={<AxButton variant="primary" onClick={() => setCreateOpen(true)}>Create document</AxButton>} />
+                            <AxEmptyState title="No documents here yet." description="Start with a clean manuscript or create one from a saved Project result." action={<AxButton variant="primary" onClick={() => setCreateOpen(true)}>Create document</AxButton>} />
                         ) : (
                             <div className="ax-work-list">
                                 {papers.map((paper) => (
