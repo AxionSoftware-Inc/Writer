@@ -30,7 +30,9 @@ export function EcosystemBar({ currentApp, projectId, projectTitle }: { currentA
             return href === "#" ? <span key={app.id} className={`${className} cursor-default opacity-40`}>{content}</span> : <a key={app.id} href={href} className={className} aria-current={active ? "page" : undefined} title={`Go to ${app.label} · G then ${shortcutKey[app.id]}`}>{content}</a>;
           })}
         </nav>
-        <a href={getEcosystemHref("science", currentApp, activeProjectId)} className="hidden min-w-0 max-w-[280px] items-center gap-2 text-[9.5px] sm:flex" title="Open Project in Axion Science"><span className="text-[var(--ax-text-faint)]">Project</span><span className="truncate font-medium text-[var(--ax-text-soft)]">{activeProjectTitle || (activeProjectId ? "Active project" : "Local workspace")}</span></a>
+        <a href={getEcosystemHref("science", currentApp, activeProjectId)} className="hidden min-w-0 max-w-[280px] items-center gap-2 text-[9.5px] sm:flex" title={activeProjectId ? "Open Project in Axion Science" : "Open Projects in Axion Science"}>
+          <span className="text-[var(--ax-text-faint)]">Project</span><span className="truncate font-medium text-[var(--ax-text-soft)]">{activeProjectTitle || (activeProjectId ? "Active project" : "No active Project")}</span>
+        </a>
       </div>
     </div>
   );
