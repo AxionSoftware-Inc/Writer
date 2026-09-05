@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -40,19 +40,36 @@ export default function EditPaperPage() {
         fetchPaper();
     }, [id, router]);
 
-    async function handleSubmit(nextData?: PaperFormData) {
+    const persistDraft = useCallback(async (data: PaperFormData) => {
         setStatus("submitting");
         setErrorMessage("");
         try {
-            await updateWriterPaper(id, nextData ?? formData);
+            const updated = await updateWriterPaper(id, data);
             setStatus("success");
-            setTimeout(() => router.push("/documents"), 900);
+            return updated;
         } catch (error) {
             console.error("Submission error:", error);
             setErrorMessage(error instanceof Error ? error.message : "Tarmoq xatosi. Server bilan bog'lanishda muammo.");
             setStatus("error");
+            return null;
         }
-    }
+    }, [id]);
+
+    const handleSubmit = useCallback(async (nextData?: PaperFormData) => {
+        const updated = await persistDraft(nextData ?? formData);
+        if (updated) window.setTimeout(() => router.push("/documents"), 900);
+    }, [formData, persistDraft, router]);
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") return;
+            event.preventDefault();
+            if (isLoading || status === "submitting") return;
+            void persistDraft(formData);
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [formData, isLoading, persistDraft, status]);
 
     if (isLoading) {
         return (
