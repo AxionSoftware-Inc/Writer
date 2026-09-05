@@ -10,16 +10,17 @@ import { createWriterPaper } from "@/lib/writer-api";
 import { compileWriterProjectSections } from "@/lib/writer-project";
 import { createDraftFromTemplate, getDefaultWriterTemplate, getWriterTemplate, getWriterTemplatePreset } from "@/lib/writer-templates";
 
-function prependToFirstSection(current: PaperFormData, importedContent: string, title?: string, abstract?: string) {
+function prependToFirstSection(current: PaperFormData, importedContent: string, title?: string, abstract?: string, provenanceMarker?: string) {
+    const contentWithProvenance = [provenanceMarker, importedContent].filter(Boolean).join("\n\n");
     const nextSections = current.sections.length
-        ? current.sections.map((section, index) => index === 0 ? { ...section, content: `${importedContent}\n\n---\n\n${section.content}` } : section)
+        ? current.sections.map((section, index) => index === 0 ? { ...section, content: `${contentWithProvenance}\n\n---\n\n${section.content}` } : section)
         : current.sections;
 
     return {
         ...current,
         sections: nextSections,
         title: current.title === getDefaultWriterTemplate().titleTemplate && title ? title : current.title,
-        abstract: current.abstract || abstract || "This draft was started from a scientific result in the active Project.",
+        abstract: current.abstract || abstract || "This draft was started from scientific evidence in the active Project.",
         content: compileWriterProjectSections(nextSections, { brandingEnabled: current.branding_enabled, brandingLabel: current.branding_label }),
     };
 }
@@ -51,16 +52,25 @@ function NewPaperPageContent() {
             void getLocalScientificObject(objectId)
                 .then((object) => {
                     if (!object?.revision?.payload || typeof object.revision.payload !== "object") {
-                        setErrorMessage("Project result could not be opened on this device.");
+                        setErrorMessage("Project evidence could not be opened on this device.");
                         return;
                     }
                     const payload = object.revision.payload as Record<string, unknown>;
                     const markdown = typeof payload.report_markdown === "string" ? payload.report_markdown : "";
                     const summary = typeof payload.summary === "string" ? payload.summary : "";
                     const importedContent = markdown.trim() || summary.trim() || object.title;
-                    setFormData((current) => prependToFirstSection(current, importedContent, object.title, summary));
+                    const reference = {
+                        projectId: object.projectId,
+                        objectId: object.id,
+                        mode: "live",
+                        revision: object.currentRevision,
+                        sourceApp: object.sourceApp,
+                        domain: object.domain || object.kind,
+                    };
+                    const provenanceMarker = `<!-- axion-scientific-reference:${JSON.stringify(reference)} -->`;
+                    setFormData((current) => prependToFirstSection(current, importedContent, object.title, summary, provenanceMarker));
                 })
-                .catch(() => setErrorMessage("Project result could not be opened on this device."));
+                .catch(() => setErrorMessage("Project evidence could not be opened on this device."));
             return;
         }
 
