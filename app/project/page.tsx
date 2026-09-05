@@ -3,7 +3,7 @@
 import React from "react";
 
 import { AxActionLink, AxBadge, AxEmptyState, AxLoadingState } from "@/components/axion";
-import { getEcosystemHref } from "@/lib/ecosystem/apps";
+import { getEcosystemHref, getEcosystemRouteHref } from "@/lib/ecosystem/apps";
 import { listLocalScientificObjects } from "@/lib/ecosystem/local-object-store";
 import { getLocalProjectTitle, resolveActiveProjectId } from "@/lib/ecosystem/project-context";
 import type { ScientificObject } from "@/lib/ecosystem/contracts";
@@ -33,7 +33,7 @@ export default function WriterProjectResultsPage() {
             return;
         }
         listLocalScientificObjects(activeProjectId)
-            .then((items) => setObjects(items.filter((item) => item.sourceApp === "math")))
+            .then((items) => setObjects(items.filter((item) => item.sourceApp !== "writer")))
             .catch(() => setObjects([]))
             .finally(() => setLoading(false));
     }, []);
@@ -48,7 +48,7 @@ export default function WriterProjectResultsPage() {
                     </a>
                     <nav className="flex items-center gap-1.5" aria-label="Writer">
                         <AxActionLink href={projectId ? `/documents?project=${encodeURIComponent(projectId)}` : "/documents"} variant="quiet" size="sm">Documents</AxActionLink>
-                        <AxActionLink href={projectId ? `/new?project=${encodeURIComponent(projectId)}` : "/new"} variant="primary" size="sm">New document</AxActionLink>
+                        <AxActionLink href={projectId ? `/new?project=${encodeURIComponent(projectId)}` : "/new"} variant="primary" size="sm">Blank document</AxActionLink>
                     </nav>
                 </div>
             </header>
@@ -56,37 +56,46 @@ export default function WriterProjectResultsPage() {
             <main className="ax-work-container">
                 <section className="ax-work-pagehead">
                     <div>
-                        <p className="ax-work-kicker">Project results</p>
+                        <p className="ax-work-kicker">Project evidence</p>
                         <h1 className="ax-work-title">{projectTitle || "Active project"}</h1>
-                        <p className="ax-work-lead">Choose a saved scientific result and start a Writer draft from it. Evidence stays linked to the same local Project instead of becoming a detached copy.</p>
+                        <p className="ax-work-lead">Choose a scientific object and start a manuscript with that evidence already inserted. The source Project and object identity remain part of the draft context.</p>
                     </div>
                     <div className="ax-work-stats">
-                        <div className="ax-work-stat"><div className="ax-work-stat-value">{objects.length}</div><div className="ax-work-stat-label">Results</div></div>
-                        <div className="ax-work-stat"><div className="ax-work-stat-value">Math</div><div className="ax-work-stat-label">Source</div></div>
+                        <div className="ax-work-stat"><div className="ax-work-stat-value">{objects.length}</div><div className="ax-work-stat-label">Objects</div></div>
+                        <div className="ax-work-stat"><div className="ax-work-stat-value">Live</div><div className="ax-work-stat-label">Evidence</div></div>
                         <div className="ax-work-stat"><div className="ax-work-stat-value">Local</div><div className="ax-work-stat-label">Context</div></div>
                     </div>
                 </section>
 
                 <section className="ax-work-section">
                     {!projectId ? (
-                        <AxEmptyState title="No active Project." description="Open Writer from the Science Hub so the document can keep the same research context." />
+                        <AxEmptyState title="No active Project." description="Open Writer from Science so the manuscript can preserve the same research context and provenance." />
                     ) : loading ? (
-                        <AxLoadingState label="Loading Project results" detail="Reading saved scientific objects from this device." />
+                        <AxLoadingState label="Loading Project evidence" detail="Reading scientific objects saved on this device." />
                     ) : objects.length ? (
                         <div className="ax-work-list">
                             {objects.map((object, index) => (
                                 <article key={object.id} className="ax-work-row grid gap-4 px-1 py-6 sm:px-5 md:grid-cols-[54px_minmax(0,1fr)_auto] md:items-center lg:px-6">
                                     <div className="font-serif text-[20px] text-[var(--ax-text-faint)]">{String(index + 1).padStart(2, "0")}</div>
                                     <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2"><h2 className="truncate font-serif text-[26px] tracking-[-0.035em] text-[var(--ax-text)]">{object.title}</h2><AxBadge>Saved result</AxBadge></div>
-                                        <div className="mt-2 text-[9.5px] uppercase tracking-[0.13em] text-[var(--ax-text-faint)]">{object.domain || object.kind}</div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="truncate font-serif text-[26px] tracking-[-0.035em] text-[var(--ax-text)]">{object.title}</h2>
+                                            <AxBadge>{String(object.sourceApp)}</AxBadge>
+                                            <AxBadge>rev {object.currentRevision}</AxBadge>
+                                        </div>
+                                        <div className="mt-2 text-[9.5px] uppercase tracking-[0.13em] text-[var(--ax-text-faint)]">{object.domain || object.kind} · Project evidence</div>
                                     </div>
-                                    <AxActionLink href={`/new?source=project&project=${encodeURIComponent(projectId)}&objectId=${encodeURIComponent(object.id)}`} variant="primary">New document</AxActionLink>
+                                    <AxActionLink
+                                        href={getEcosystemRouteHref("writer", "/new", "writer", projectId, { source: "project", objectId: object.id })}
+                                        variant="primary"
+                                    >
+                                        Use as evidence
+                                    </AxActionLink>
                                 </article>
                             ))}
                         </div>
                     ) : (
-                        <AxEmptyState title="No saved Math results yet." description="Solve something in Laboratory and press Save. The result will appear here without a server-side import step." action={<AxActionLink href={getEcosystemHref("math", "writer", projectId)}>Open Math</AxActionLink>} />
+                        <AxEmptyState title="No scientific evidence yet." description="Save a result in Mathematics or add a finding in another instrument. It will appear here as a structured Project object." action={<AxActionLink href={getEcosystemHref("math", "writer", projectId)}>Open Mathematics</AxActionLink>} />
                     )}
                 </section>
             </main>
