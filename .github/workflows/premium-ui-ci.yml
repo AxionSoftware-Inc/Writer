@@ -1,0 +1,36 @@
+name: Premium UI CI
+
+on:
+  push:
+    branches: ["main", "premium-production-polish-*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test e2e/premium-ui.spec.ts
+      - name: Upload visual QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: writer-premium-ui-${{ github.run_id }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
